@@ -1,7 +1,0 @@
-mov push 10
-mov push 5
-< pop pop push
-jf $$skip$$ pop
-prn "5 is not less than 10"
-$$skip$$
-lbl $$skip$$
