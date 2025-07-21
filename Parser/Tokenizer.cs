@@ -1,12 +1,152 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace VM.Parser
 {
-    internal class Tokenizer
+    public enum TokenType
     {
+        PRINT, INPUT, LET, IF, THEN, ELSE, END, FOR, TO, STEP, NEXT,
+        WHILE, WEND, REPEAT, UNTIL, CONTINUE, EXIT,
+        LEN, VAL, ISNAN,
+        EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV, MOD, EXP,
+        AND, OR, NOT, ASSIGN,
+        LPAREN, RPAREN, COMMA,
+        ID, NUMBER, STRING, NEWLINE, COMMENT, EOF
     }
+
+    public record Token(TokenType Type, string Text, int Line);
+
+    public class Tokenizer(string sourceCode)
+    {
+        private readonly string[] lines = sourceCode.Replace("\r\n", "\n").Split('\n');
+        private int lineIndex = 0;
+        private int currentLine = 1;
+
+        private static readonly Dictionary<string, TokenType> Keywords = new()
+        {
+            ["print"] = TokenType.PRINT,
+            ["input"] = TokenType.INPUT,
+            ["let"] = TokenType.LET,
+            ["if"] = TokenType.IF,
+            ["then"] = TokenType.THEN,
+            ["else"] = TokenType.ELSE,
+            ["end"] = TokenType.END,
+            ["for"] = TokenType.FOR,
+            ["to"] = TokenType.TO,
+            ["step"] = TokenType.STEP,
+            ["next"] = TokenType.NEXT,
+            ["while"] = TokenType.WHILE,
+            ["wend"] = TokenType.WEND,
+            ["repeat"] = TokenType.REPEAT,
+            ["until"] = TokenType.UNTIL,
+            ["continue"] = TokenType.CONTINUE,
+            ["exit"] = TokenType.EXIT,
+            ["len"] = TokenType.LEN,
+            ["val"] = TokenType.VAL,
+            ["isnan"] = TokenType.ISNAN,
+            ["and"] = TokenType.AND,
+            ["or"] = TokenType.OR,
+            ["not"] = TokenType.NOT,
+        };
+
+        private static readonly Dictionary<string, TokenType> Symbols = new()
+        {
+            ["=="] = TokenType.EQ,
+            ["="] = TokenType.ASSIGN,
+            ["!="] = TokenType.NEQ,
+            ["<="] = TokenType.LTE,
+            [">="] = TokenType.GTE,
+            ["<"] = TokenType.LT,
+            [">"] = TokenType.GT,
+            ["+"] = TokenType.ADD,
+            ["-"] = TokenType.SUB,
+            ["*"] = TokenType.MUL,
+            ["/"] = TokenType.DIV,
+            ["%"] = TokenType.MOD,
+            ["^"] = TokenType.EXP,
+            ["("] = TokenType.LPAREN,
+            [")"] = TokenType.RPAREN,
+            [","] = TokenType.COMMA
+        };
+
+        public IEnumerable<Token> Tokenize()
+        {
+            while (lineIndex < lines.Length)
+            {
+                var line = lines[lineIndex++].Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    yield return new Token(TokenType.NEWLINE, "", currentLine++);
+                    continue;
+                }
+
+                int i = 0;
+                while (i < line.Length)
+                {
+                    if (char.IsWhiteSpace(line[i]))
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    if (line[i] == '\'')
+                    {
+                        yield return new Token(TokenType.COMMENT, line[i..], currentLine++);
+                        break;
+                    }
+
+                    if (line[i] == '"')
+                    {
+                        int end = i + 1;
+                        while (end < line.Length && line[end] != '"') end++;
+                        var str = line[(i + 1)..end];
+                        yield return new Token(TokenType.STRING, str, currentLine);
+                        i = end + 1;
+                        continue;
+                    }
+
+                    bool matchedSymbol = false;
+                    foreach (var (symbol, type) in Symbols.OrderByDescending(p => p.Key.Length))
+                    {
+                        if (line[i..].StartsWith(symbol))
+                        {
+                            yield return new Token(type, symbol, currentLine);
+                            i += symbol.Length;
+                            matchedSymbol = true;
+                            break;
+                        }
+                    }
+                    if (matchedSymbol) continue;
+
+                    if (char.IsDigit(line[i]))
+                    {
+                        int start = i;
+                        while (i < line.Length && (char.IsDigit(line[i]) || line[i] == '.')) i++;
+                        yield return new Token(TokenType.NUMBER, line[start..i], currentLine);
+                        continue;
+                    }
+
+                    if (char.IsLetter(line[i]))
+                    {
+                        int start = i;
+                        while (i < line.Length && (char.IsLetterOrDigit(line[i]) || line[i] == '_')) i++;
+                        var text = line[start..i].ToLower();
+                        if (Keywords.TryGetValue(text, out var type))
+                        {
+                            yield return new Token(type, text, currentLine);
+                        }
+                        else
+                        {
+                            yield return new Token(TokenType.ID, text, currentLine);
+                        }
+                        continue;
+                    }
+                    Console.WriteLine($"DEBUG: current line = '{line}', i = {i}, char = '{line[i]}' ({(int)line[i]})");
+                    throw new Exception($"unexpected char '{line[i]}' at line {currentLine}");
+                }
+
+                yield return new Token(TokenType.NEWLINE, "", currentLine++);
+            }
+
+            yield return new Token(TokenType.EOF, "", currentLine);
+        }
+    }
+
 }
