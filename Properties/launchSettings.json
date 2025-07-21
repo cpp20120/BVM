@@ -2,7 +2,6 @@
   "profiles": {
     "VM": {
       "commandName": "Project",
-      "commandLineArgs": "factorial.4km"
     }
   }
 }
