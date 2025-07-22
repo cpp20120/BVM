@@ -15,9 +15,9 @@ namespace VM.Parser
 
     public class Tokenizer(string sourceCode)
     {
-        private readonly string[] lines = sourceCode.Replace("\r\n", "\n").Split('\n');
-        private int lineIndex = 0;
-        private int currentLine = 1;
+        private readonly string[] _lines = sourceCode.Replace("\r\n", "\n").Split('\n');
+        private int _lineIndex = 0;
+        private int _currentLine = 1;
 
         private static readonly Dictionary<string, TokenType> Keywords = new()
         {
@@ -68,16 +68,16 @@ namespace VM.Parser
 
         public IEnumerable<Token> Tokenize()
         {
-            while (lineIndex < lines.Length)
+            while (_lineIndex < _lines.Length)
             {
-                var line = lines[lineIndex++].Trim();
+                var line = _lines[_lineIndex++].Trim();
                 if (string.IsNullOrWhiteSpace(line))
                 {
-                    yield return new Token(TokenType.NEWLINE, "", currentLine++);
+                    yield return new Token(TokenType.NEWLINE, "", _currentLine++);
                     continue;
                 }
 
-                int i = 0;
+                var i = 0;
                 while (i < line.Length)
                 {
                     if (char.IsWhiteSpace(line[i]))
@@ -88,7 +88,7 @@ namespace VM.Parser
 
                     if (line[i] == '\'')
                     {
-                        yield return new Token(TokenType.COMMENT, line[i..], currentLine++);
+                        yield return new Token(TokenType.COMMENT, line[i..], _currentLine++);
                         break;
                     }
 
@@ -97,17 +97,17 @@ namespace VM.Parser
                         int end = i + 1;
                         while (end < line.Length && line[end] != '"') end++;
                         var str = line[(i + 1)..end];
-                        yield return new Token(TokenType.STRING, str, currentLine);
+                        yield return new Token(TokenType.STRING, str, _currentLine);
                         i = end + 1;
                         continue;
                     }
 
-                    bool matchedSymbol = false;
+                    var matchedSymbol = false;
                     foreach (var (symbol, type) in Symbols.OrderByDescending(p => p.Key.Length))
                     {
                         if (line[i..].StartsWith(symbol))
                         {
-                            yield return new Token(type, symbol, currentLine);
+                            yield return new Token(type, symbol, _currentLine);
                             i += symbol.Length;
                             matchedSymbol = true;
                             break;
@@ -117,35 +117,35 @@ namespace VM.Parser
 
                     if (char.IsDigit(line[i]))
                     {
-                        int start = i;
+                        var  start = i;
                         while (i < line.Length && (char.IsDigit(line[i]) || line[i] == '.')) i++;
-                        yield return new Token(TokenType.NUMBER, line[start..i], currentLine);
+                        yield return new Token(TokenType.NUMBER, line[start..i], _currentLine);
                         continue;
                     }
 
                     if (char.IsLetter(line[i]))
                     {
-                        int start = i;
+                        var start = i;
                         while (i < line.Length && (char.IsLetterOrDigit(line[i]) || line[i] == '_')) i++;
                         var text = line[start..i].ToLower();
                         if (Keywords.TryGetValue(text, out var type))
                         {
-                            yield return new Token(type, text, currentLine);
+                            yield return new Token(type, text, _currentLine);
                         }
                         else
                         {
-                            yield return new Token(TokenType.ID, text, currentLine);
+                            yield return new Token(TokenType.ID, text, _currentLine);
                         }
                         continue;
                     }
                     Console.WriteLine($"DEBUG: current line = '{line}', i = {i}, char = '{line[i]}' ({(int)line[i]})");
-                    throw new Exception($"unexpected char '{line[i]}' at line {currentLine}");
+                    throw new Exception($"unexpected char '{line[i]}' at line {_currentLine}");
                 }
 
-                yield return new Token(TokenType.NEWLINE, "", currentLine++);
+                yield return new  Token(TokenType.NEWLINE, "", _currentLine++);
             }
 
-            yield return new Token(TokenType.EOF, "", currentLine);
+            yield return new Token(TokenType.EOF, "", _currentLine);
         }
     }
 

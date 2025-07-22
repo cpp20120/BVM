@@ -1,28 +1,35 @@
-using System.Collections.Generic;
-
 namespace VM.Parser
 {
-    public class ProgramParser(List<Token> tokens)
+    public class ParseException(int line, string message) : Exception($"Line {line}: {message}")
     {
-        private readonly List<Token> tokens = tokens;
-        private int position = 0;
+        public int Line { get; } = line;
+    }
 
-        private Token Peek(int offset = 0) => position + offset < tokens.Count ? tokens[position + offset] : tokens[^1];
-        private Token Next() => tokens[position++];
+    public partial class ProgramParser(List<Token> tokens)
+    {
+        private int _position;
+        private Token Peek(int offset = 0) => _position + offset < tokens.Count ? tokens[_position + offset] : tokens[^1];
+        private Token Next() => tokens[_position++];
+
         private bool Match(params TokenType[] types)
         {
-            if (types.Contains(Peek().Type))
-            {
-                position++;
-                return true;
-            }
-            return false;
+            if (!types.Contains(Peek().Type)) return false;
+            _position++;
+            return true;
         }
 
         private void Expect(TokenType type)
         {
-            if (!Match(type))
-                throw new Exception($"ожидался токен {type}, но был {Peek().Type}");
+            if (Match(type)) return;
+            var next = Peek();
+            throw new ParseException(next.Line,
+                $"Expected {type} but found {next.Type} '{next.Text}'");
+        }
+
+        private void SkipNewlines()
+        {
+            while (Peek().Type == TokenType.NEWLINE)
+                Next();
         }
 
         public ProgramNode ParseProgram()
@@ -30,9 +37,8 @@ namespace VM.Parser
             var program = new ProgramNode();
             while (!Match(TokenType.EOF))
             {
-                Console.WriteLine($"[program] next token: {Peek().Type} '{Peek().Text}'");
-
-                if (Peek().Type == TokenType.NEWLINE || Peek().Type == TokenType.COMMENT)
+                SkipNewlines();
+                if (Peek().Type == TokenType.COMMENT)
                 {
                     Next();
                     continue;
@@ -40,13 +46,10 @@ namespace VM.Parser
 
                 var stmt = ParseStatement();
                 program.Statements.Add(stmt);
-
-                if (Peek().Type == TokenType.NEWLINE)
-                    Next();
+                SkipNewlines();
             }
             return program;
         }
-
 
         private StatementNode ParseStatement()
         {
@@ -59,133 +62,328 @@ namespace VM.Parser
                 case TokenType.LET:
                     return ParseLet();
                 case TokenType.IF:
-                    return ParseIf;
+                    return ParseIf();
                 case TokenType.WHILE:
-                    return ParseWhile;
+                    return ParseWhile();
+                case TokenType.REPEAT:
+                    return ParseRepeat();
+                case TokenType.FOR:
+                    return ParseFor();
                 case TokenType.INPUT:
-                    return ParseInput;
+                    return ParseInput();
                 case TokenType.CONTINUE:
                     Next();
-                    return new ContinueStmt();
+                    return new ContinueStmt { Line = token.Line };
                 case TokenType.EXIT:
                     Next();
-                    return new ExitStmt();
+                    return new ExitStmt { Line = token.Line };
                 default:
-                    throw new Exception($"неизвестное начало инструкции: {token.Type}");
+                    throw new ParseException(token.Line,
+                        $"Unknown statement beginning: {token.Type}");
             }
         }
 
-
         private StatementNode ParsePrint()
         {
-            Next(); // skip PRINT
-            var stmt = new PrintStmt();
-            while (Peek().Type != TokenType.NEWLINE && Peek().Type != TokenType.EOF)
+            var printToken = Next();
+            var stmt = new PrintStmt { Line = printToken.Line };
+
+            if (Peek().Type == TokenType.NEWLINE || Peek().Type == TokenType.EOF)
+                return stmt;
+
+            stmt.Expressions.Add(ParseExpr());
+            while (Match(TokenType.COMMA))
             {
                 stmt.Expressions.Add(ParseExpr());
-                if (!Match(TokenType.COMMA)) break;
             }
+
             return stmt;
         }
 
         private StatementNode ParseLet()
         {
-            Next(); // skip LET
+            var letToken = Next();
             var id = Next();
             Expect(TokenType.ASSIGN);
-            var expr = ParseExpr();
-            return new LetStmt { Id = id.Text, Expression = expr };
-        }
 
-        private StatementNode ParseIf
-        {
-            get
+            return new LetStmt
             {
-                Next(); // skip IF
-                var cond = ParseExpr();
-                Expect(TokenType.THEN);
-                if (Peek().Type == TokenType.NEWLINE) Next();
-
-                var thenBlock = new List<StatementNode>();
-                while (Peek().Type != TokenType.ELSE && !(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
-                {
-                    thenBlock.Add(ParseStatement());
-                    if (Peek().Type == TokenType.NEWLINE) Next();
-                }
-
-                List<StatementNode> elseBlock = new();
-
-                if (Match(TokenType.ELSE))
-                {
-                    if (Peek().Type == TokenType.NEWLINE) Next();
-                    while (!(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
-                    {
-                        elseBlock.Add(ParseStatement());
-                        if (Peek().Type == TokenType.NEWLINE) Next();
-                    }
-                }
-
-                Expect(TokenType.END);
-                Expect(TokenType.IF);
-
-                return new IfStmt { Condition = cond, ThenBranch = thenBlock, ElseBranch = elseBlock };
-            }
-        }
-
-        private StatementNode ParseWhile
-        {
-            get
-            {
-                Next(); // skip WHILE
-                var cond = ParseExpr();
-                if (Peek().Type == TokenType.NEWLINE) Next();
-
-                var body = new List<StatementNode>();
-                while (Peek().Type != TokenType.WEND)
-                {
-                    body.Add(ParseStatement());
-                    if (Peek().Type == TokenType.NEWLINE) Next();
-                }
-
-                Expect(TokenType.WEND);
-                return new WhileStmt { Condition = cond, Body = body };
-            }
-        }
-
-        private StatementNode ParseInput
-        {
-            get
-            {
-                Next(); // skip INPUT
-                var stmt = new InputStmt();
-                var first = Next();
-                if (first.Type != TokenType.ID)
-                    throw new Exception($"ожидался идентификатор после INPUT, а не {first.Type}");
-                stmt.Ids.Add(first.Text);
-
-                while (Match(TokenType.COMMA))
-                {
-                    var id = Next();
-                    if (id.Type != TokenType.ID)
-                        throw new Exception($"ожидался идентификатор после ','");
-                    stmt.Ids.Add(id.Text);
-                }
-
-                return stmt;
-            }
-        }
-
-        private ExprNode ParseExpr()
-        {
-            var token = Next();
-            return token.Type switch
-            {
-                TokenType.NUMBER => new NumberExpr { Value = token.Text },
-                TokenType.STRING => new StringExpr { Value = token.Text },
-                TokenType.ID => new VarExpr { Name = token.Text },
-                _ => throw new Exception($"неожиданный токен в выражении: {token.Type}")
+                Id = id.Text,
+                Expression = ParseExpr(),
+                Line = letToken.Line
             };
         }
 
+        private StatementNode ParseIf()
+        {
+            var ifToken = Next();
+            var cond = ParseExpr();
+            Expect(TokenType.THEN);
+
+            if (Peek().Type == TokenType.NEWLINE)
+                Next();
+
+            var thenBlock = new List<StatementNode>();
+            while (Peek().Type != TokenType.ELSE &&
+                  !(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
+            {
+                thenBlock.Add(ParseStatement());
+                if (Peek().Type == TokenType.NEWLINE)
+                    Next();
+            }
+
+            List<StatementNode> elseBlock = [];
+            if (Match(TokenType.ELSE))
+            {
+                if (Peek().Type == TokenType.NEWLINE)
+                    Next();
+
+                while (!(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
+                {
+                    elseBlock.Add(ParseStatement());
+                    if (Peek().Type == TokenType.NEWLINE)
+                        Next();
+                }
+            }
+
+            Expect(TokenType.END);
+            Expect(TokenType.IF);
+
+            return new IfStmt
+            {
+                Condition = cond,
+                ThenBranch = thenBlock,
+                ElseBranch = elseBlock,
+                Line = ifToken.Line
+            };
+        }
+
+        private StatementNode ParseWhile()
+        {
+            var whileToken = Next();
+            var cond = ParseExpr();
+
+            if (Peek().Type == TokenType.NEWLINE)
+                Next();
+
+            var body = new List<StatementNode>();
+            while (Peek().Type != TokenType.WEND)
+            {
+                body.Add(ParseStatement());
+                if (Peek().Type == TokenType.NEWLINE)
+                    Next();
+            }
+
+            Expect(TokenType.WEND);
+            return new WhileStmt
+            {
+                Condition = cond,
+                Body = body,
+                Line = whileToken.Line
+            };
+        }
+
+        private StatementNode ParseInput()
+        {
+            var inputToken = Next();
+            var stmt = new InputStmt { Line = inputToken.Line };
+            var first = Next();
+
+            if (first.Type != TokenType.ID)
+                throw new ParseException(first.Line,
+                    $"Expected identifier after INPUT, not {first.Type}");
+
+            stmt.Ids.Add(first.Text);
+
+            while (Match(TokenType.COMMA))
+            {
+                var id = Next();
+                if (id.Type != TokenType.ID)
+                    throw new ParseException(id.Line,
+                        $"Expected identifier after ','");
+                stmt.Ids.Add(id.Text);
+            }
+
+            return stmt;
+        }
+
+        private StatementNode ParseRepeat()
+        {
+            var repeatToken = Next();
+            if (Peek().Type == TokenType.NEWLINE)
+                Next();
+
+            var body = new List<StatementNode>();
+            while (Peek().Type != TokenType.UNTIL)
+            {
+                body.Add(ParseStatement());
+                if (Peek().Type == TokenType.NEWLINE)
+                    Next();
+            }
+
+            Expect(TokenType.UNTIL);
+            var condition = ParseExpr();
+
+            return new RepeatStmt
+            {
+                Body = body,
+                Condition = condition,
+                Line = repeatToken.Line
+            };
+        }
+
+        private StatementNode ParseFor()
+        {
+            var forToken = Next();
+            var id = Next();
+            Expect(TokenType.ASSIGN);
+            var fromExpr = ParseExpr();
+            Expect(TokenType.TO);
+            var toExpr = ParseExpr();
+
+            ExprNode? stepExpr = null;
+            if (Match(TokenType.STEP))
+                stepExpr = ParseExpr();
+
+            if (Peek().Type == TokenType.NEWLINE)
+                Next();
+
+            var body = new List<StatementNode>();
+            while (Peek().Type != TokenType.NEXT)
+            {
+                body.Add(ParseStatement());
+                if (Peek().Type == TokenType.NEWLINE)
+                    Next();
+            }
+
+            Expect(TokenType.NEXT);
+            if (Peek().Type == TokenType.ID)
+                Next();
+
+            return new ForStmt
+            {
+                Variable = id.Text,
+                From = fromExpr,
+                To = toExpr,
+                Step = stepExpr,
+                Body = body,
+                Line = forToken.Line
+            };
+        }
+
+        private ExprNode ParseExpr() => ParseBinaryExpr(0);
+
+        private ExprNode ParseBinaryExpr(int minPrecedence)
+        {
+            var left = ParseUnaryExpr();
+
+            while (true)
+            {
+                var op = Peek();
+                var precedence = GetPrecedence(op.Type);
+                if (precedence < minPrecedence) break;
+
+                if (!IsBinaryOperator(op.Type)) break;
+
+                Next();
+                var right = ParseBinaryExpr(precedence + 1);
+                left = new BinaryExpr
+                {
+                    Left = left,
+                    Operator = op.Type,
+                    Right = right,
+                    Line = op.Line
+                };
+            }
+
+            return left;
+        }
+
+        private ExprNode ParseUnaryExpr()
+        {
+            if (Match(TokenType.SUB, TokenType.NOT))
+            {
+                var opToken = tokens[_position - 1];
+                return new UnaryExpr
+                {
+                    Operator = opToken.Type,
+                    Operand = ParseUnaryExpr(),
+                    Line = opToken.Line
+                };
+            }
+            return ParsePrimaryExpr();
+        }
+
+        private ExprNode ParsePrimaryExpr()
+        {
+            if (Match(TokenType.LPAREN))
+            {
+                var lparen = tokens[_position - 1];
+                var expr = ParseExpr();
+                Expect(TokenType.RPAREN);
+                return expr;
+            }
+
+            var token = Peek();
+            if (token.Type is TokenType.LEN or TokenType.VAL or TokenType.ISNAN)
+            {
+                return ParseFuncCall();
+            }
+
+            token = Next();
+            return token.Type switch
+            {
+                TokenType.NUMBER => new NumberExpr { Value = token.Text, Line = token.Line },
+                TokenType.STRING => new StringExpr { Value = token.Text, Line = token.Line },
+                TokenType.ID => new VarExpr { Name = token.Text, Line = token.Line },
+                _ => throw new ParseException(token.Line,
+                    $"Unexpected token in expression: {token.Type}")
+            };
+        }
+
+        private ExprNode ParseFuncCall()
+        {
+            var funcToken = Next();
+            Expect(TokenType.LPAREN);
+            var args = new List<ExprNode>();
+
+            if (Peek().Type != TokenType.RPAREN)
+            {
+                args.Add(ParseExpr());
+                while (Match(TokenType.COMMA))
+                {
+                    args.Add(ParseExpr());
+                }
+            }
+
+            Expect(TokenType.RPAREN);
+
+            return new FuncCallExpr
+            {
+                Func = funcToken.Type,
+                Arguments = args,
+                Line = funcToken.Line
+            };
+        }
+
+        private static int GetPrecedence(TokenType type) => type switch
+        {
+            TokenType.OR => 1,
+            TokenType.AND => 2,
+            TokenType.EQ or TokenType.NEQ or TokenType.LT or TokenType.LTE or TokenType.GT or TokenType.GTE => 3,
+            TokenType.ADD or TokenType.SUB => 4,
+            TokenType.MUL or TokenType.DIV or TokenType.MOD => 5,
+            TokenType.EXP => 6,
+            _ => 0
+        };
+
+        private static bool IsBinaryOperator(TokenType type) => type switch
+        {
+            TokenType.ADD or TokenType.SUB or TokenType.MUL or TokenType.DIV or
+            TokenType.MOD or TokenType.EXP or TokenType.EQ or TokenType.NEQ or
+            TokenType.LT or TokenType.LTE or TokenType.GT or TokenType.GTE or
+            TokenType.AND or TokenType.OR => true,
+            _ => false
+        };
     }
 }

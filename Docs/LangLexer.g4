@@ -1,4 +1,4 @@
-lexer grammar LBTokens;
+lexer grammar LangLexer;
 
 // operators
 MUL : '*' ;
@@ -48,7 +48,7 @@ STEP    : 'STEP' | 'step' ;
 NEXT    : 'NEXT' | 'next' ;
 TO      : 'TO' | 'to' ;
 CONTINUE    : 'CONTINUE' | 'continue' ;
-EXIT    : 'EXIT' | 'EXIT' ;
+EXIT    : 'EXIT' | 'exit' ;
 
 // comments
 COMMENT : REM ~[\r\n]* ;

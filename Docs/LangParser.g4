@@ -1,7 +1,7 @@
-parser grammar LBParser;
+parser grammar LangParser;
 
 options {
-    tokenVocab = LBTokens;
+    tokenVocab = LangLexer;
 }
 
 program: (line NEWLINE?)+ EOF;
@@ -24,7 +24,6 @@ statement:
     | exitStmt
 ;
 
-// Statements
 printStmt: PRINT exprList?;
 inputStmt: INPUT ID (COMMA ID)*;
 letStmt: LET ID EQ expr;
@@ -56,18 +55,18 @@ repeatStmt:
 continueStmt: CONTINUE;
 exitStmt: EXIT;
 
-// Expressions
 exprList: expr (COMMA expr)*;
+
 expr:
-    LPAREN expr RPAREN                             #parenExpr
-    | op=(SUB | NOT) expr                          #unaryExpr
+      LPAREN expr RPAREN                             #parenExpr
+    | op=(SUB | NOT) expr                            #unaryExpr
     | left=expr op=(EXP | MUL | DIV | MOD) right=expr #binaryExpr
-    | left=expr op=(ADD | SUB) right=expr          #binaryExpr
+    | left=expr op=(ADD | SUB) right=expr            #binaryExpr
     | left=expr op=(EQ | NEQ | LT | LTE | GT | GTE) right=expr #comparisonExpr
-    | left=expr op=AND right=expr                  #logicalExpr
-    | left=expr op=OR right=expr                   #logicalExpr
-    | func=(LEN | VAL | ISNAN) LPAREN expr RPAREN  #funcCallExpr
-    | ID                                           #varExpr
-    | NUMBER                                       #numExpr
-    | STRINGLITERAL                                #strExpr
+    | left=expr op=AND right=expr                    #logicalExpr
+    | left=expr op=OR right=expr                     #logicalExpr
+    | func=(LEN | VAL | ISNAN) LPAREN expr RPAREN    #funcCallExpr
+    | ID                                              #varExpr
+    | NUMBER                                          #numExpr
+    | STRINGLITERAL                                   #strExpr
 ;

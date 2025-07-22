@@ -9,4 +9,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Update="Docs\LangLexer.g4">
+      <DependentUpon>LangParser.g4</DependentUpon>
+    </None>
+  </ItemGroup>
+
 </Project>
