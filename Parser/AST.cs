@@ -68,9 +68,9 @@ namespace VM.Parser
 
         public override string ToString()
         {
-            var thenStr = string.Join("\n", ThenBranch.Select(s => "  " + s));
+            var thenStr = string.Join("\n", ThenBranch.Select(s => $"  {s}"));
             var elseStr = ElseBranch.Count > 0
-                ? "\nELSE\n" + string.Join("\n", ElseBranch.Select(s => "  " + s))
+                ? $"\nELSE\n{string.Join("\n", ElseBranch.Select(s => $"  {s}"))}"
                 : "";
 
             return $"IF {Condition} THEN\n{thenStr}{elseStr}\nEND IF";
@@ -86,7 +86,7 @@ namespace VM.Parser
 
         public override string ToString()
         {
-            var bodyStr = string.Join("\n", Body.Select(s => "  " + s));
+            var bodyStr = string.Join("\n", Body.Select(s => $"  {s}"));
             return $"WHILE {Condition}\n{bodyStr}\nWEND";
         }
 
@@ -100,7 +100,7 @@ namespace VM.Parser
 
         public override string ToString()
         {
-            var bodyStr = string.Join("\n", Body.Select(s => "  " + s));
+            var bodyStr = string.Join("\n", Body.Select(s => $"  {s}"));
             return $"REPEAT\n{bodyStr}\nUNTIL {Condition}";
         }
 
@@ -117,8 +117,8 @@ namespace VM.Parser
 
         public override string ToString()
         {
-            var stepStr = Step != null ? $" STEP {Step}" : "";
-            var bodyStr = string.Join("\n", Body.Select(s => "  " + s));
+            var stepStr = Step != null ? $@" STEP {Step}" : "";
+            var bodyStr = string.Join("\n", Body.Select(s => $"  {s}"));
             return $"FOR {Variable} = {From} TO {To}{stepStr}\n{bodyStr}\nNEXT {Variable}";
         }
 

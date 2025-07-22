@@ -94,7 +94,7 @@ namespace VM.Parser
 
                     if (line[i] == '"')
                     {
-                        int end = i + 1;
+                        var end = i + 1;
                         while (end < line.Length && line[end] != '"') end++;
                         var str = line[(i + 1)..end];
                         yield return new Token(TokenType.STRING, str, _currentLine);
@@ -105,13 +105,11 @@ namespace VM.Parser
                     var matchedSymbol = false;
                     foreach (var (symbol, type) in Symbols.OrderByDescending(p => p.Key.Length))
                     {
-                        if (line[i..].StartsWith(symbol))
-                        {
-                            yield return new Token(type, symbol, _currentLine);
-                            i += symbol.Length;
-                            matchedSymbol = true;
-                            break;
-                        }
+                        if (!line[i..].StartsWith(symbol)) continue;
+                        yield return new Token(type, symbol, _currentLine);
+                        i += symbol.Length;
+                        matchedSymbol = true;
+                        break;
                     }
                     if (matchedSymbol) continue;
 
