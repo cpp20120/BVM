@@ -14,14 +14,14 @@ namespace VM.Core
             _context = new ExContext();
             _instructions = new Dictionary<OpCode, Instruction>
             {
-                // Стековые
+                // Stack instructions
                 { OpCode.PUSH, new PushInstruction() },
                 { OpCode.POP, new PopInstruction() },
                 { OpCode.DUP, new DupInstruction() },
                 { OpCode.SWAP, new SwapInstruction() },
                 { OpCode.OVER, new OverInstruction() },
 
-                // Арифметика
+                // Arithmetic instructions
                 { OpCode.ADD, new AddInstruction() },
                 { OpCode.SUB, new SubInstruction() },
                 { OpCode.MUL, new MulInstruction() },
@@ -29,7 +29,7 @@ namespace VM.Core
                 { OpCode.MOD, new ModInstruction() },
                 { OpCode.NEG, new NegInstruction() },
 
-                // Логика
+                // Logical instructions
                 { OpCode.AND, new AndInstruction() },
                 { OpCode.OR, new OrInstruction() },
                 { OpCode.NOT, new NotInstruction() },
@@ -37,27 +37,26 @@ namespace VM.Core
                 { OpCode.EQ, new EqInstruction() },
                 { OpCode.NEQ, new NeqInstruction() },
 
-                // Переменные
+                // Variables
                 { OpCode.LOAD, new LoadInstruction() },
                 { OpCode.STORE, new StoreInstruction() },
-                // глобалки пока можно не добавлять
 
-                // Управляющие
+                // Conditional
                 { OpCode.JMP, new JmpInstruction() },
                 { OpCode.JZ, new JzInstruction() },
                 { OpCode.JNZ, new JnzInstruction() },
                 { OpCode.CALL, new CallInstruction() },
                 { OpCode.RET, new RetInstruction() },
 
-                // Ввод/вывод
+                // IO
                 { OpCode.PRINT, new PrintInstruction() },
                 { OpCode.INPUT, new InputInstruction() },
                 { OpCode.HALT, new HaltInstruction() },
 
-                // Строки
+                // Strings
                 { OpCode.PUSHS, new PushStringInstruction() },
 
-                // Массивы
+                // Arrays
                 { OpCode.NEWARRAY, new NewArrayInstruction() },
                 { OpCode.GETINDEX, new GetIndexInstruction() },
                 { OpCode.SETINDEX, new SetIndexInstruction() },
@@ -93,7 +92,7 @@ namespace VM.Core
             {
                 Console.WriteLine("VM finished.");
             }
-        }
+        } 
 
         public void Reset()
         {

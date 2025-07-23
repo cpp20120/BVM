@@ -1,17 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using VM.Core;
-using VM.Core.Instructions;
 using VM.Parser;
 using VM.Core.IR;
 using VM.Core.IR.Nodes;
 
-class Program
+namespace VM
 {
-    static void Main()
+    class Program
     {
-        const string code = @"
+        static void Main()
+        {
+            const string code = @"
 
 LET A = ARRAY(5)
 LET I = 0
@@ -54,20 +52,23 @@ WEND
 
 ";
 
-        var tokenizer = new Tokenizer(code);
-        var tokens = tokenizer.Tokenize().ToList();
+            var tokenizer = new Tokenizer(code);
+            var tokens = tokenizer.Tokenize().ToList();
 
-        var parser = new ProgramParser(tokens);
-        var ast = parser.ParseProgram();
+            var parser = new ProgramParser(tokens);
+            var ast = parser.ParseProgram();
 
-        var astToIr = new AstToIrCompiler();
-        List<IrNode?> ir = ast.Accept(astToIr);
+            var astToIr = new AstToIrCompiler();
+            List<IrNode?> ir = ast.Accept(astToIr);
 
-        var irCompiler = new IrToBytecodeCompiler();
-        var bytecode = irCompiler.Compile(ir);
+            var irCompiler = new IrToBytecodeCompiler();
+            var bytecode = irCompiler.Compile(ir);
 
-        var vm = new VirtualMachine();
-        vm.LoadProgram(bytecode);
-        vm.Run();
+            var vm = new VirtualMachine();
+            vm.LoadProgram(bytecode);
+            vm.DumpState();
+            vm.Run();
+            vm.DumpState();
+        }
     }
 }

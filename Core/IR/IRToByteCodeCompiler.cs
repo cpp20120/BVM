@@ -281,22 +281,22 @@ namespace VM.Core.IR
 
         private void CompileNewArray(IrNewArray a)
         {
-            CompileNode(a.Size); // Помещаем размер массива на стек
+            CompileNode(a.Size); //Putting the array size to stack
             _bytecode.Add((byte)OpCode.NEWARRAY);
         }
 
         private void CompileIndex(IrIndex i)
         {
-            CompileNode(i.Target); // Помещаем массив на стек
-            CompileNode(i.Index); // Помещаем индекс на стек
+            CompileNode(i.Target); // Putting the array on the stack
+            CompileNode(i.Index); // Putting the index on the stack
             _bytecode.Add((byte)OpCode.GETINDEX);
         }
 
         private void CompileStoreIndex(IrStoreIndex s)
         {
-            CompileNode(s.Target); // Помещаем массив на стек
-            CompileNode(s.Index); // Помещаем индекс на стек
-            CompileNode(s.Value); // Помещаем значение на стек
+            CompileNode(s.Target); // Putting the array on the stack
+            CompileNode(s.Index);  // Putting the index on the stack
+            CompileNode(s.Value); // Putting the value  on the stack
             _bytecode.Add((byte)OpCode.SETINDEX);
         }
 

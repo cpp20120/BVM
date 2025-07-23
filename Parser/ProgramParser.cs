@@ -114,7 +114,7 @@ namespace VM.Parser
 
             if (Peek().Type == TokenType.LBRACKET)
             {
-                Next(); // Пропускаем '['
+                Next(); // Skip '['
                 var index = ParseExpr();
                 Expect(TokenType.RBRACKET);
                 Expect(TokenType.ASSIGN);
@@ -376,7 +376,7 @@ namespace VM.Parser
                     return new StringExpr { Value = token.Text, Line = token.Line };
                 case TokenType.ID:
                     if (Peek().Type != TokenType.LBRACKET) return new VarExpr { Name = token.Text, Line = token.Line };
-                    Next(); // Пропускаем '['
+                    Next(); // Skip '['
                     var index = ParseExpr();
                     Expect(TokenType.RBRACKET);
                     return new IndexExpr
