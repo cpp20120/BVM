@@ -246,9 +246,9 @@ namespace VM.Parser
     
     public class AssignIndexStmt : StatementNode
     {
-        public required string Target;          // ← это имя переменной, типа "A"
-        public required ExprNode Index;         // ← выражение, типа [1]
-        public required ExprNode Value;         // ← выражение, типа = 42
+        public required string Target;
+        public required ExprNode Index;
+        public required ExprNode Value;
 
         public override string ToString() => $"LET {Target}[{Index}] = {Value}";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
