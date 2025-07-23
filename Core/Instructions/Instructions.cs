@@ -39,6 +39,10 @@ namespace VM.Core.Instructions
         public void Push(VmValue value) => _stack.Push(value);
         public VmValue Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty stack");
         public VmValue Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty stack");
+        public void Clear() => _stack.Clear();
+        public override string ToString() =>
+            "[" + string.Join(", ", _stack.Reverse().Select(v => v.Value?.ToString() ?? "null")) + "]";
+
     }
 
     public class CallStack
@@ -49,6 +53,8 @@ namespace VM.Core.Instructions
         public void Push(int value) => _stack.Push(value);
         public int Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty call stack");
         public int Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty call stack");
+        public void Clear() => _stack.Clear();
+        public override string ToString() => "[" + string.Join(",", _stack.Reverse()) + "]";
     }
 
     public abstract class Instruction(OpCode code, string mnemonic, int operandSize = 0, string stackEffect = "")
@@ -225,9 +231,12 @@ namespace VM.Core.Instructions
     {
         public override void Execute(ExContext context)
         {
-            throw new VmException("Execution halted by HALT instruction");
+            throw new VmHaltException();
         }
     }
+
+    public class VmHaltException : Exception { }
+
 
     public class RetInstruction() : Instruction(OpCode.RET, "RET", 0, "ret_addr →")
     {

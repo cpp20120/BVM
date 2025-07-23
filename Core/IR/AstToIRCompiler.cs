@@ -134,7 +134,7 @@ namespace VM.Core.IR
                 VarExpr v => new IrVar { Name = v.Name, Line = v.Line },
                 BinaryExpr b => new IrBinary
                 {
-                    Op = b.Operator.ToString(),
+                    Op = TokenUtils.TokenToString(b.Operator),
                     Left = CompileExpr(b.Left!),
                     Right = CompileExpr(b.Right!),
                     Line = b.Line

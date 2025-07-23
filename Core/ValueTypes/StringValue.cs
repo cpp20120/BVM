@@ -1,13 +1,8 @@
 ﻿namespace VM.Core.ValueTypes;
 
-public class StringValue : IValue
+public class StringValue(string value) : IValue
 {
-    public string Value { get; }
-
-    public StringValue(string value)
-    {
-        Value = value;
-    }
+    public string Value { get; } = value;
 
     public string TypeName => "string";
     public object Raw => Value;

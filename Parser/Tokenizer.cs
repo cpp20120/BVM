@@ -13,6 +13,27 @@ namespace VM.Parser
     }
 
     public record Token(TokenType Type, string Text, int Line);
+    public static class TokenUtils
+    {
+        public static string TokenToString(TokenType type) => type switch
+        {
+            TokenType.ADD => "+",
+            TokenType.SUB => "-",
+            TokenType.MUL => "*",
+            TokenType.DIV => "/",
+            TokenType.MOD => "%",
+            TokenType.EXP => "^",
+            TokenType.EQ => "==",
+            TokenType.NEQ => "!=",
+            TokenType.LT => "<",
+            TokenType.LTE => "<=",
+            TokenType.GT => ">",
+            TokenType.GTE => ">=",
+            TokenType.AND => "AND",
+            TokenType.OR => "OR",
+            _ => type.ToString()
+        };
+    }
 
     public class Tokenizer(string sourceCode)
     {
