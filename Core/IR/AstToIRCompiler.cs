@@ -15,24 +15,30 @@ namespace VM.Core.IR
 
         public List<IrNode> Visit(PrintStmt node)
         {
-            var expr = node.Expressions.Count > 0 ? CompileExpr(node.Expressions[0]) : new IrConst { Value = "", Type = "string" };
-            return [ new IrPrint { Expr = expr, Line = node.Line } ];
+            var expr = node.Expressions.Count > 0
+                ? CompileExpr(node.Expressions[0])
+                : new IrConst { Value = "", Type = "string" };
+            return [new IrPrint { Expr = expr, Line = node.Line }];
         }
 
         public List<IrNode> Visit(LetStmt node) =>
-        [ new IrLet
-        {
-            Name = node.Id!,
-            Expr = CompileExpr(node.Expression!),
-            Line = node.Line
-        } ];
+        [
+            new IrLet
+            {
+                Name = node.Id!,
+                Expr = CompileExpr(node.Expression!),
+                Line = node.Line
+            }
+        ];
 
         public List<IrNode> Visit(InputStmt node) =>
-        [ new IrInput
-        {
-            VarNames = [..node.Ids],
-            Line = node.Line
-        } ];
+        [
+            new IrInput
+            {
+                VarNames = [..node.Ids],
+                Line = node.Line
+            }
+        ];
 
         public List<IrNode> Visit(IfStmt node)
         {
@@ -43,41 +49,48 @@ namespace VM.Core.IR
                 ElseBlock = node.ElseBranch.Count > 0 ? CompileBlock(node.ElseBranch) : null,
                 Line = node.Line
             };
-            return [ irIf ];
+            return [irIf];
         }
 
         public List<IrNode> Visit(WhileStmt node) =>
-        [ new IrWhile
-        {
-            Condition = CompileExpr(node.Condition!),
-            Body = CompileBlock(node.Body),
-            Line = node.Line
-        } ];
+        [
+            new IrWhile
+            {
+                Condition = CompileExpr(node.Condition!),
+                Body = CompileBlock(node.Body),
+                Line = node.Line
+            }
+        ];
 
         public List<IrNode> Visit(RepeatStmt node)
         {
-            return [ new IrRepeat
-            {
-                Body = CompileBlock(node.Body),
-                Condition = CompileExpr(node.Condition!),
-                Line = node.Line
-            } ];
+            return
+            [
+                new IrRepeat
+                {
+                    Body = CompileBlock(node.Body),
+                    Condition = CompileExpr(node.Condition!),
+                    Line = node.Line
+                }
+            ];
         }
 
         public List<IrNode> Visit(ForStmt node) =>
-        [ new IrFor
-        {
-            VarName = node.Variable,
-            From = CompileExpr(node.From),
-            To = CompileExpr(node.To),
-            Step = node.Step != null ? CompileExpr(node.Step) : null,
-            Body = CompileBlock(node.Body),
-            Line = node.Line
-        } ];
+        [
+            new IrFor
+            {
+                VarName = node.Variable,
+                From = CompileExpr(node.From),
+                To = CompileExpr(node.To),
+                Step = node.Step != null ? CompileExpr(node.Step) : null,
+                Body = CompileBlock(node.Body),
+                Line = node.Line
+            }
+        ];
 
-        public List<IrNode> Visit(ContinueStmt node) => [ new IrGoto { Label = "__continue__", Line = node.Line } ];
+        public List<IrNode> Visit(ContinueStmt node) => [new IrGoto { Label = "__continue__", Line = node.Line }];
 
-        public List<IrNode> Visit(ExitStmt node) => [ new IrGoto { Label = "__break__", Line = node.Line } ];
+        public List<IrNode> Visit(ExitStmt node) => [new IrGoto { Label = "__break__", Line = node.Line }];
 
         public List<IrNode> Visit(BinaryExpr node)
         {
@@ -90,7 +103,7 @@ namespace VM.Core.IR
         public List<IrNode> Visit(VarExpr node) => throw new NotSupportedException();
         public List<IrNode> Visit(FuncCallExpr node) => throw new NotSupportedException();
         public List<IrNode> Visit(CustomCallExpr node) => throw new NotSupportedException();
-        
+
         public List<IrNode> Visit(AssignIndexStmt node) =>
         [
             new IrStoreIndex
@@ -104,18 +117,24 @@ namespace VM.Core.IR
 
         public List<IrNode> Visit(NewArrayExpr node)
         {
-            return [new IrNewArray() {
-                Size = CompileExpr(node.Size),
-                ElementType = "any",
-                Line = node.Line
-            }];
+            return
+            [
+                new IrNewArray()
+                {
+                    Size = CompileExpr(node.Size),
+                    ElementType = "any",
+                    Line = node.Line
+                }
+            ];
         }
+
         public List<IrNode> Visit(ExprNode node)
         {
             return node.Accept(this);
         }
-        
-        public List<IrNode> Visit(IndexExpr node) => throw new NotSupportedException("IndexExpr должен обрабатываться через CompileExpr");
+
+        public List<IrNode> Visit(IndexExpr node) =>
+            throw new NotSupportedException("IndexExpr должен обрабатываться через CompileExpr");
 
         private List<IrNode> CompileBlock(List<StatementNode> stmts)
         {
@@ -163,7 +182,7 @@ namespace VM.Core.IR
                     Args = c.Args.ConvertAll(CompileExpr),
                     Line = c.Line
                 },
-                NewArrayExpr a => new IrNewArray 
+                NewArrayExpr a => new IrNewArray
                 {
                     Size = CompileExpr(a.Size),
                     ElementType = "any",

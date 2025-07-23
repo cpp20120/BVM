@@ -125,7 +125,7 @@
         public required IrNode Target;
         public required string FieldName;
     }
-    
+
     public class IrIndex : IrNode
     {
         public required IrNode Target;
@@ -138,5 +138,4 @@
         public required IrNode Index;
         public required IrNode Value;
     }
-    
 }

@@ -20,9 +20,14 @@ namespace VM.Core.Instructions
 
         public int AsInt() => Type == VmType.INT ? (int)Value : throw new VmTypeException(Type, VmType.INT);
         public float AsFloat() => Type == VmType.FLOAT ? (float)Value : throw new VmTypeException(Type, VmType.FLOAT);
-        public string AsString() => Type == VmType.STRING ? (string)Value : throw new VmTypeException(Type, VmType.STRING);
+
+        public string AsString() =>
+            Type == VmType.STRING ? (string)Value : throw new VmTypeException(Type, VmType.STRING);
+
         public bool AsBool() => Type == VmType.BOOL ? (bool)Value : throw new VmTypeException(Type, VmType.BOOL);
-        public VmArray AsArray() => Type == VmType.ARRAY ? (VmArray)Value : throw new VmTypeException(Type, VmType.ARRAY);
+
+        public VmArray AsArray() =>
+            Type == VmType.ARRAY ? (VmArray)Value : throw new VmTypeException(Type, VmType.ARRAY);
 
         public static VmValue FromInt(int value) => new() { Type = VmType.INT, Value = value };
         public static VmValue FromFloat(float value) => new() { Type = VmType.FLOAT, Value = value };
@@ -40,9 +45,9 @@ namespace VM.Core.Instructions
         public VmValue Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty stack");
         public VmValue Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty stack");
         public void Clear() => _stack.Clear();
+
         public override string ToString() =>
             "[" + string.Join(", ", _stack.Reverse().Select(v => v.Value?.ToString() ?? "null")) + "]";
-
     }
 
     public class CallStack
@@ -52,7 +57,10 @@ namespace VM.Core.Instructions
         public bool IsEmpty => _stack.Count == 0;
         public void Push(int value) => _stack.Push(value);
         public int Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty call stack");
-        public int Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty call stack");
+
+        public int Peek() =>
+            _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty call stack");
+
         public void Clear() => _stack.Clear();
         public override string ToString() => "[" + string.Join(",", _stack.Reverse()) + "]";
     }
@@ -66,6 +74,7 @@ namespace VM.Core.Instructions
 
         public abstract void Execute(ExContext context);
     }
+
     public class PushInstruction() : Instruction(OpCode.PUSH, "PUSH", sizeof(int), "→ value")
     {
         public override void Execute(ExContext context)
@@ -235,7 +244,9 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class VmHaltException : Exception { }
+    public class VmHaltException : Exception
+    {
+    }
 
 
     public class RetInstruction() : Instruction(OpCode.RET, "RET", 0, "ret_addr →")
@@ -253,7 +264,7 @@ namespace VM.Core.Instructions
     {
         public override void Execute(ExContext context)
         {
-            var  targetAddr = context.ReadInt();
+            var targetAddr = context.ReadInt();
             context.CallStack.Push(context.InstructionPointer);
             context.InstructionPointer = targetAddr;
         }
@@ -277,9 +288,10 @@ namespace VM.Core.Instructions
                 context.InstructionPointer += offset;
         }
     }
+
     public class AddInstruction() : Instruction(OpCode.ADD, "ADD", 0, "a b → (a+b)")
     {
-        public override void  Execute(ExContext context)
+        public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -308,6 +320,7 @@ namespace VM.Core.Instructions
                 throw new VmTypeException("SUB requires numeric operands");
         }
     }
+
     public class EqInstruction() : Instruction(OpCode.EQ, "EQ", 0, "a b → (a==b)")
     {
         public override void Execute(ExContext context)
@@ -327,6 +340,7 @@ namespace VM.Core.Instructions
             context.DataStack.Push(VmValue.FromBool(!Equals(a.Value, b.Value)));
         }
     }
+
     public class LoadInstruction() : Instruction(OpCode.LOAD, "LOAD", sizeof(int), "→ value")
     {
         public override void Execute(ExContext context)
@@ -345,6 +359,7 @@ namespace VM.Core.Instructions
             context.LocalVariables[index] = value;
         }
     }
+
     public class JmpInstruction() : Instruction(OpCode.JMP, "JMP", sizeof(short), "→")
     {
         public override void Execute(ExContext context)
@@ -353,6 +368,7 @@ namespace VM.Core.Instructions
             context.InstructionPointer += offset;
         }
     }
+
     public class JzInstruction() : Instruction(OpCode.JZ, "JZ", sizeof(short), "cond →")
     {
         public override void Execute(ExContext context)
@@ -371,6 +387,7 @@ namespace VM.Core.Instructions
                 context.InstructionPointer += offset;
         }
     }
+
     public class InputInstruction() : Instruction(OpCode.INPUT, "INPUT", 0, "→ value")
     {
         public override void Execute(ExContext context)
@@ -383,6 +400,7 @@ namespace VM.Core.Instructions
                 : VmValue.FromString(line ?? ""));
         }
     }
+
     public class PushStringInstruction() : Instruction(OpCode.PUSHS, "PUSHS", -1, "→ value")
     {
         public override void Execute(ExContext context)
@@ -393,7 +411,7 @@ namespace VM.Core.Instructions
             context.DataStack.Push(VmValue.FromString(str));
         }
     }
-    
+
     public class OrInstruction() : Instruction(OpCode.OR, "OR", 0, "a b → (a || b)")
     {
         public override void Execute(ExContext context)
@@ -419,6 +437,7 @@ namespace VM.Core.Instructions
             context.DataStack.Push(VmValue.FromBool(result));
         }
     }
+
     public class VmArray
     {
         private readonly VmValue[] _elements;
@@ -429,7 +448,7 @@ namespace VM.Core.Instructions
             _elements = new VmValue[size];
             ElementType = elementType;
             for (int i = 0; i < size; i++)
-                _elements[i] = new VmValue { Type = VmType.NULL, Value = null }; // Инициализация null-значениями
+                _elements[i] = new VmValue { Type = VmType.NULL, Value = null };
         }
 
         public VmValue Get(int index)
@@ -457,13 +476,17 @@ namespace VM.Core.Instructions
                 if (i > 0) sb.Append(", ");
                 sb.Append(_elements[i].Value?.ToString() ?? "null");
             }
+
             sb.Append(']');
             return sb.ToString();
         }
     }
+
     public class NewArrayInstruction : Instruction
     {
-        public NewArrayInstruction() : base(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array") { }
+        public NewArrayInstruction() : base(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array")
+        {
+        }
 
         public override void Execute(ExContext context)
         {
@@ -477,7 +500,9 @@ namespace VM.Core.Instructions
 
     public class GetIndexInstruction : Instruction
     {
-        public GetIndexInstruction() : base(OpCode.GETINDEX, "GETINDEX", 0, "array index → value") { }
+        public GetIndexInstruction() : base(OpCode.GETINDEX, "GETINDEX", 0, "array index → value")
+        {
+        }
 
         public override void Execute(ExContext context)
         {
@@ -490,7 +515,9 @@ namespace VM.Core.Instructions
 
     public class SetIndexInstruction : Instruction
     {
-        public SetIndexInstruction() : base(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array") { }
+        public SetIndexInstruction() : base(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array")
+        {
+        }
 
         public override void Execute(ExContext context)
         {
@@ -498,8 +525,7 @@ namespace VM.Core.Instructions
             var index = context.DataStack.Pop().AsInt();
             var array = context.DataStack.Pop().AsArray();
             array.Set(index, value);
-            context.DataStack.Push(VmValue.FromArray(array)); // Возвращаем массив на стек
+            context.DataStack.Push(VmValue.FromArray(array));
         }
     }
-    
-} 
+}

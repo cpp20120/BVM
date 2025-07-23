@@ -12,6 +12,7 @@ namespace VM.Core
         public int InstructionPointer { get; set; }
 
         private byte[] _code;
+
         public void LoadCode(byte[] bytecode)
         {
             _code = bytecode;
@@ -32,13 +33,14 @@ namespace VM.Core
             return result;
         }
 
-        // In ExContext.ReadByte():
+
         public byte ReadByte()
         {
             if (InstructionPointer >= _code.Length)
                 throw new VmException("Attempt to read beyond bytecode boundary");
             return _code[InstructionPointer++];
         }
+
         public byte[] ReadBytes(int count)
         {
             var result = new byte[count];
@@ -46,8 +48,8 @@ namespace VM.Core
             {
                 result[i] = ReadByte();
             }
+
             return result;
         }
-
     }
 }

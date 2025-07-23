@@ -54,23 +54,18 @@ WEND
 
 ";
 
-        // === TOKENIZE ===
         var tokenizer = new Tokenizer(code);
         var tokens = tokenizer.Tokenize().ToList();
 
-        // === PARSE ===
         var parser = new ProgramParser(tokens);
         var ast = parser.ParseProgram();
 
-        // === COMPILE TO IR ===
         var astToIr = new AstToIrCompiler();
         List<IrNode?> ir = ast.Accept(astToIr);
 
-        // === COMPILE TO BYTECODE ===
         var irCompiler = new IrToBytecodeCompiler();
-        byte[] bytecode = irCompiler.Compile(ir);
+        var bytecode = irCompiler.Compile(ir);
 
-        // === RUN ON VM ===
         var vm = new VirtualMachine();
         vm.LoadProgram(bytecode);
         vm.Run();

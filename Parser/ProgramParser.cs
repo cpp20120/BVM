@@ -8,7 +8,10 @@ namespace VM.Parser
     public partial class ProgramParser(List<Token> tokens)
     {
         private int _position;
-        private Token Peek(int offset = 0) => _position + offset < tokens.Count ? tokens[_position + offset] : tokens[^1];
+
+        private Token Peek(int offset = 0) =>
+            _position + offset < tokens.Count ? tokens[_position + offset] : tokens[^1];
+
         private Token Next() => tokens[_position++];
 
         private bool Match(params TokenType[] types)
@@ -48,6 +51,7 @@ namespace VM.Parser
                 program.Statements.Add(stmt);
                 SkipNewlines();
             }
+
             return program;
         }
 
@@ -104,7 +108,7 @@ namespace VM.Parser
         {
             var letToken = Next();
             var id = Next();
-            
+
             if (id.Type != TokenType.ID)
                 throw new ParseException(id.Line, $"Expected identifier after LET, got {id.Type}");
 
@@ -115,7 +119,7 @@ namespace VM.Parser
                 Expect(TokenType.RBRACKET);
                 Expect(TokenType.ASSIGN);
                 var value = ParseExpr();
-                
+
                 return new AssignIndexStmt
                 {
                     Target = id.Text,
@@ -124,10 +128,10 @@ namespace VM.Parser
                     Line = letToken.Line
                 };
             }
-            
+
             Expect(TokenType.ASSIGN);
             var expr = ParseExpr();
-            
+
             return new LetStmt
             {
                 Id = id.Text,
@@ -147,7 +151,7 @@ namespace VM.Parser
 
             var thenBlock = new List<StatementNode>();
             while (Peek().Type != TokenType.ELSE &&
-                  !(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
+                   !(Peek().Type == TokenType.END && Peek(1).Type == TokenType.IF))
             {
                 thenBlock.Add(ParseStatement());
                 if (Peek().Type == TokenType.NEWLINE)
@@ -308,7 +312,7 @@ namespace VM.Parser
                 if (!IsBinaryOperator(op.Type)) break;
 
                 Next();
-                
+
                 var right = ParseBinaryExpr(precedence + 1);
                 left = new BinaryExpr
                 {
@@ -349,7 +353,7 @@ namespace VM.Parser
             {
                 return ParseFuncCall();
             }
-    
+
             if (token.Type == TokenType.ARRAY)
             {
                 Next();
@@ -362,7 +366,7 @@ namespace VM.Parser
                     Line = token.Line
                 };
             }
-    
+
             token = Next();
             switch (token.Type)
             {
@@ -426,9 +430,9 @@ namespace VM.Parser
         private static bool IsBinaryOperator(TokenType type) => type switch
         {
             TokenType.ADD or TokenType.SUB or TokenType.MUL or TokenType.DIV or
-            TokenType.MOD or TokenType.EXP or TokenType.EQ or TokenType.NEQ or
-            TokenType.LT or TokenType.LTE or TokenType.GT or TokenType.GTE or
-            TokenType.AND or TokenType.OR => true,
+                TokenType.MOD or TokenType.EXP or TokenType.EQ or TokenType.NEQ or
+                TokenType.LT or TokenType.LTE or TokenType.GT or TokenType.GTE or
+                TokenType.AND or TokenType.OR => true,
             _ => false
         };
     }

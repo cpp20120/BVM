@@ -2,18 +2,12 @@
 
 namespace VM.Core.Instructions
 {
-    /// <summary>
-    /// Базовое исключение виртуальной машины
-    /// </summary>
     public class VmException(string message, int lineNumber = -1, int ip = -1) : Exception(message)
     {
         public int LineNumber { get; } = lineNumber;
         public int InstructionPointer { get; } = ip;
     }
 
-    /// <summary>
-    /// Ошибка несоответствия типов
-    /// </summary>
     public class VmTypeException : VmException
     {
         public VmType ActualType { get; }
@@ -34,14 +28,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    /// <summary>
-    /// Ошибка работы со стеком
-    /// </summary>
     public class VmStackException(string message, int line = -1, int ip = -1) : VmException(message, line, ip);
 
-    /// <summary>
-    /// Ошибка доступа к памяти
-    /// </summary>
     public class VmMemoryException(int address, string message, int line = -1, int ip = -1)
         : VmException($"Memory error at 0x{address:X4}: {message}", line, ip)
     {

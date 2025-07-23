@@ -4,7 +4,9 @@ public sealed class NullValue : IValue
 {
     public static readonly NullValue Instance = new();
 
-    private NullValue() { }
+    private NullValue()
+    {
+    }
 
     public string TypeName => "null";
     public object Raw => null;

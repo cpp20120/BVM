@@ -3,7 +3,7 @@
     string TypeName { get; }
     object Raw { get; }
 
-    int AsInt(); 
+    int AsInt();
     float AsFloat();
     string AsString();
     bool AsBool();

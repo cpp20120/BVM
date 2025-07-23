@@ -2,17 +2,58 @@ namespace VM.Parser
 {
     public enum TokenType
     {
-        PRINT, INPUT, LET, IF, THEN, ELSE, END, FOR, TO, STEP, NEXT,
-        WHILE, WEND, REPEAT, UNTIL, CONTINUE, EXIT,
-        LEN, VAL, ISNAN,
-        EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV, MOD, EXP,
-        AND, OR, NOT, ASSIGN,
-        LPAREN, RPAREN, COMMA,
-        ID, NUMBER, STRING, NEWLINE, COMMENT, EOF,LBRACKET,
-        RBRACKET, ARRAY
+        PRINT,
+        INPUT,
+        LET,
+        IF,
+        THEN,
+        ELSE,
+        END,
+        FOR,
+        TO,
+        STEP,
+        NEXT,
+        WHILE,
+        WEND,
+        REPEAT,
+        UNTIL,
+        CONTINUE,
+        EXIT,
+        LEN,
+        VAL,
+        ISNAN,
+        EQ,
+        NEQ,
+        LT,
+        LTE,
+        GT,
+        GTE,
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        MOD,
+        EXP,
+        AND,
+        OR,
+        NOT,
+        ASSIGN,
+        LPAREN,
+        RPAREN,
+        COMMA,
+        ID,
+        NUMBER,
+        STRING,
+        NEWLINE,
+        COMMENT,
+        EOF,
+        LBRACKET,
+        RBRACKET,
+        ARRAY
     }
 
     public record Token(TokenType Type, string Text, int Line);
+
     public static class TokenUtils
     {
         public static string TokenToString(TokenType type) => type switch
@@ -89,7 +130,6 @@ namespace VM.Parser
             [","] = TokenType.COMMA,
             ["["] = TokenType.LBRACKET,
             ["]"] = TokenType.RBRACKET,
-
         };
 
         public IEnumerable<Token> Tokenize()
@@ -137,11 +177,12 @@ namespace VM.Parser
                         matchedSymbol = true;
                         break;
                     }
+
                     if (matchedSymbol) continue;
 
                     if (char.IsDigit(line[i]))
                     {
-                        var  start = i;
+                        var start = i;
                         while (i < line.Length && (char.IsDigit(line[i]) || line[i] == '.')) i++;
                         yield return new Token(TokenType.NUMBER, line[start..i], _currentLine);
                         continue;
@@ -160,17 +201,18 @@ namespace VM.Parser
                         {
                             yield return new Token(TokenType.ID, text, _currentLine);
                         }
+
                         continue;
                     }
+
                     Console.WriteLine($"DEBUG: current line = '{line}', i = {i}, char = '{line[i]}' ({(int)line[i]})");
                     throw new Exception($"unexpected char '{line[i]}' at line {_currentLine}");
                 }
 
-                yield return new  Token(TokenType.NEWLINE, "", _currentLine++);
+                yield return new Token(TokenType.NEWLINE, "", _currentLine++);
             }
 
             yield return new Token(TokenType.EOF, "", _currentLine);
         }
     }
-
 }

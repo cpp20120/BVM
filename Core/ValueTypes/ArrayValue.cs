@@ -55,6 +55,7 @@ public class ArrayValue : IValue
             if (i > 0) sb.Append(", ");
             sb.Append(_elements[i].ToString());
         }
+
         sb.Append(']');
         return sb.ToString();
     }

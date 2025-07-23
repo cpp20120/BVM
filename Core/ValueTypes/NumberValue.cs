@@ -2,7 +2,11 @@
 
 public class NumberValue : IValue
 {
-    public enum NumberKind { Int, Float }
+    public enum NumberKind
+    {
+        Int,
+        Float
+    }
 
     public NumberKind Kind { get; }
     public object Value { get; }

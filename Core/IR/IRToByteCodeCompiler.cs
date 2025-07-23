@@ -35,7 +35,9 @@ namespace VM.Core.IR
                 case IrLet l: CompileLet(l); break;
                 case IrPrint p: CompilePrint(p); break;
                 case IrInput i: CompileInput(i); break;
-                case IrBlock b: foreach (var stmt in b.Statements) CompileNode(stmt); break;
+                case IrBlock b:
+                    foreach (var stmt in b.Statements) CompileNode(stmt);
+                    break;
                 case IrIf iff: CompileIf(iff); break;
                 case IrWhile wh: CompileWhile(wh); break;
                 case IrRepeat rep: CompileRepeat(rep); break;
@@ -73,66 +75,67 @@ namespace VM.Core.IR
         }
 
         private void CompileBinary(IrBinary bin)
-    {
-    CompileNode(bin.Left);
-    CompileNode(bin.Right);
+        {
+            CompileNode(bin.Left);
+            CompileNode(bin.Right);
 
-    switch (bin.Op)
-    {
-        case "+": _bytecode.Add((byte)OpCode.ADD); break;
-        case "-": _bytecode.Add((byte)OpCode.SUB); break;
-        case "*": _bytecode.Add((byte)OpCode.MUL); break;
-        case "/": _bytecode.Add((byte)OpCode.DIV); break;
-        case "%": _bytecode.Add((byte)OpCode.MOD); break;
-        case "==": _bytecode.Add((byte)OpCode.EQ); break;
-        case "!=": _bytecode.Add((byte)OpCode.NEQ); break;
-        case "AND": _bytecode.Add((byte)OpCode.AND); break;
-        case "OR": _bytecode.Add((byte)OpCode.OR); break;
+            switch (bin.Op)
+            {
+                case "+": _bytecode.Add((byte)OpCode.ADD); break;
+                case "-": _bytecode.Add((byte)OpCode.SUB); break;
+                case "*": _bytecode.Add((byte)OpCode.MUL); break;
+                case "/": _bytecode.Add((byte)OpCode.DIV); break;
+                case "%": _bytecode.Add((byte)OpCode.MOD); break;
+                case "==": _bytecode.Add((byte)OpCode.EQ); break;
+                case "!=": _bytecode.Add((byte)OpCode.NEQ); break;
+                case "AND": _bytecode.Add((byte)OpCode.AND); break;
+                case "OR": _bytecode.Add((byte)OpCode.OR); break;
 
-        case "<":
-        case "LT":
-            _bytecode.Add((byte)OpCode.CMP);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(-1));
-            _bytecode.Add((byte)OpCode.EQ);
-            break;
+                case "<":
+                case "LT":
+                    _bytecode.Add((byte)OpCode.CMP);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(-1));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    break;
 
-        case ">":
-        case "GT":
-            _bytecode.Add((byte)OpCode.CMP);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(1));
-            _bytecode.Add((byte)OpCode.EQ);
-            break;
+                case ">":
+                case "GT":
+                    _bytecode.Add((byte)OpCode.CMP);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(1));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    break;
 
-        case "<=":
-        case "LTE":
-            _bytecode.Add((byte)OpCode.CMP);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(-1));
-            _bytecode.Add((byte)OpCode.EQ);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(0));
-            _bytecode.Add((byte)OpCode.EQ);
-            _bytecode.Add((byte)OpCode.OR);
-            break;
+                case "<=":
+                case "LTE":
+                    _bytecode.Add((byte)OpCode.CMP);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(-1));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(0));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    _bytecode.Add((byte)OpCode.OR);
+                    break;
 
-        case ">=":
-        case "GTE":
-            _bytecode.Add((byte)OpCode.CMP);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(1));
-            _bytecode.Add((byte)OpCode.EQ);
-            _bytecode.Add((byte)OpCode.PUSH);
-            _bytecode.AddRange(BitConverter.GetBytes(0));
-            _bytecode.Add((byte)OpCode.EQ);
-            _bytecode.Add((byte)OpCode.OR);
-            break;
+                case ">=":
+                case "GTE":
+                    _bytecode.Add((byte)OpCode.CMP);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(1));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    _bytecode.Add((byte)OpCode.PUSH);
+                    _bytecode.AddRange(BitConverter.GetBytes(0));
+                    _bytecode.Add((byte)OpCode.EQ);
+                    _bytecode.Add((byte)OpCode.OR);
+                    break;
 
-        default:
-            throw new Exception($"Unknown binary operator: {bin.Op}");
-    }
-    }
+                default:
+                    throw new Exception($"Unknown binary operator: {bin.Op}");
+            }
+        }
+
         private void CompileUnary(IrUnary u)
         {
             CompileNode(u.Operand);
@@ -275,7 +278,7 @@ namespace VM.Core.IR
 
             PlaceLabel(end);
         }
-        
+
         private void CompileNewArray(IrNewArray a)
         {
             CompileNode(a.Size); // Помещаем размер массива на стек

@@ -23,7 +23,6 @@ namespace VM.Parser
         T Visit(CustomCallExpr node);
         T Visit(NewArrayExpr node);
         T Visit(ExprNode node);
-
     }
 
     public abstract class AstNode
@@ -43,7 +42,9 @@ namespace VM.Parser
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
 
-    public abstract class StatementNode : AstNode { }
+    public abstract class StatementNode : AstNode
+    {
+    }
 
     public class PrintStmt : StatementNode
     {
@@ -150,7 +151,9 @@ namespace VM.Parser
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
 
-    public abstract class ExprNode : AstNode { }
+    public abstract class ExprNode : AstNode
+    {
+    }
 
     public class BinaryExpr : ExprNode
     {
@@ -233,7 +236,7 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-    
+
     public class IndexExpr : ExprNode
     {
         public required ExprNode Target;
@@ -243,7 +246,7 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-    
+
     public class AssignIndexStmt : StatementNode
     {
         public required string Target;
@@ -264,11 +267,11 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
+
     public class NewArrayExpr : ExprNode
     {
         public ExprNode Size { get; init; }
         public override string ToString() => $"ARRAY({Size})";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
 }
