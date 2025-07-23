@@ -40,6 +40,9 @@ namespace VM.Core.IR
                 case IrWhile wh: CompileWhile(wh); break;
                 case IrRepeat rep: CompileRepeat(rep); break;
                 case IrFor f: CompileFor(f); break;
+                case IrNewArray a: CompileNewArray(a); break;
+                case IrIndex i: CompileIndex(i); break;
+                case IrStoreIndex s: CompileStoreIndex(s); break;
                 default: throw new NotImplementedException($"Not implemented: {node.GetType().Name}");
             }
         }
@@ -271,6 +274,27 @@ namespace VM.Core.IR
             AddFixup(start);
 
             PlaceLabel(end);
+        }
+        
+        private void CompileNewArray(IrNewArray a)
+        {
+            CompileNode(a.Size); // Помещаем размер массива на стек
+            _bytecode.Add((byte)OpCode.NEWARRAY);
+        }
+
+        private void CompileIndex(IrIndex i)
+        {
+            CompileNode(i.Target); // Помещаем массив на стек
+            CompileNode(i.Index); // Помещаем индекс на стек
+            _bytecode.Add((byte)OpCode.GETINDEX);
+        }
+
+        private void CompileStoreIndex(IrStoreIndex s)
+        {
+            CompileNode(s.Target); // Помещаем массив на стек
+            CompileNode(s.Index); // Помещаем индекс на стек
+            CompileNode(s.Value); // Помещаем значение на стек
+            _bytecode.Add((byte)OpCode.SETINDEX);
         }
 
         // --- Helpers ---

@@ -18,6 +18,12 @@ namespace VM.Parser
         T Visit(StringExpr node);
         T Visit(VarExpr node);
         T Visit(FuncCallExpr node);
+        T Visit(IndexExpr node);
+        T Visit(AssignIndexStmt node);
+        T Visit(CustomCallExpr node);
+        T Visit(NewArrayExpr node);
+        T Visit(ExprNode node);
+
     }
 
     public abstract class AstNode
@@ -227,4 +233,42 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
+    
+    public class IndexExpr : ExprNode
+    {
+        public required ExprNode Target;
+        public required ExprNode Index;
+
+        public override string ToString() => $"{Target}[{Index}]";
+
+        public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
+    }
+    
+    public class AssignIndexStmt : StatementNode
+    {
+        public required string Target;          // ← это имя переменной, типа "A"
+        public required ExprNode Index;         // ← выражение, типа [1]
+        public required ExprNode Value;         // ← выражение, типа = 42
+
+        public override string ToString() => $"LET {Target}[{Index}] = {Value}";
+        public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
+    }
+
+
+    public class CustomCallExpr : ExprNode
+    {
+        public required string Name;
+        public required List<ExprNode> Args;
+
+        public override string ToString() => $"{Name}({string.Join(", ", Args)})";
+
+        public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
+    }
+    public class NewArrayExpr : ExprNode
+    {
+        public ExprNode Size { get; init; }
+        public override string ToString() => $"ARRAY({Size})";
+        public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
+    }
+
 }

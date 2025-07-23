@@ -8,7 +8,8 @@ namespace VM.Parser
         EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV, MOD, EXP,
         AND, OR, NOT, ASSIGN,
         LPAREN, RPAREN, COMMA,
-        ID, NUMBER, STRING, NEWLINE, COMMENT, EOF
+        ID, NUMBER, STRING, NEWLINE, COMMENT, EOF,LBRACKET,
+        RBRACKET, ARRAY
     }
 
     public record Token(TokenType Type, string Text, int Line);
@@ -44,6 +45,7 @@ namespace VM.Parser
             ["and"] = TokenType.AND,
             ["or"] = TokenType.OR,
             ["not"] = TokenType.NOT,
+            ["array"] = TokenType.ARRAY,
         };
 
         private static readonly Dictionary<string, TokenType> Symbols = new()
@@ -63,7 +65,10 @@ namespace VM.Parser
             ["^"] = TokenType.EXP,
             ["("] = TokenType.LPAREN,
             [")"] = TokenType.RPAREN,
-            [","] = TokenType.COMMA
+            [","] = TokenType.COMMA,
+            ["["] = TokenType.LBRACKET,
+            ["]"] = TokenType.RBRACKET,
+
         };
 
         public IEnumerable<Token> Tokenize()

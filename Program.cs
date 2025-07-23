@@ -48,6 +48,11 @@ WEND
 REPEAT
     PRINT ""In repeat""
 UNTIL Z
+
+LET A = ARRAY(3)
+LET A[1] = 42
+PRINT A[1]
+
 ";
 
 // === TOKENIZER ===
@@ -116,7 +121,10 @@ var instructions = new Dictionary<OpCode, Instruction>
     { OpCode.PUSHS, new PushStringInstruction() },
     { OpCode.HALT, new HaltInstruction() },
     { OpCode.OR, new OrInstruction() },
-    { OpCode.AND, new AndInstruction() }
+    { OpCode.AND, new AndInstruction() },
+    { OpCode.NEWARRAY, new NewArrayInstruction() },
+    { OpCode.GETINDEX, new GetIndexInstruction() },
+    { OpCode.SETINDEX, new SetIndexInstruction() },
 };
 
 Console.WriteLine("\n=== EXECUTION ===");

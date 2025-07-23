@@ -109,8 +109,9 @@
 
     public class IrNewArray : IrNode
     {
-        public required IrNode Size;
-        public required string ElementType;
+        public required IrNode Size { get; init; }
+        public required string ElementType { get; init; }
+        public override string ToString() => $"ARRAY({Size})";
     }
 
     public class IrStructInit : IrNode
@@ -124,4 +125,18 @@
         public required IrNode Target;
         public required string FieldName;
     }
+    
+    public class IrIndex : IrNode
+    {
+        public required IrNode Target;
+        public required IrNode Index;
+    }
+
+    public class IrStoreIndex : IrNode
+    {
+        public required IrNode Target;
+        public required IrNode Index;
+        public required IrNode Value;
+    }
+    
 }

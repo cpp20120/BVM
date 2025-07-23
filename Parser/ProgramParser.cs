@@ -104,12 +104,34 @@ namespace VM.Parser
         {
             var letToken = Next();
             var id = Next();
-            Expect(TokenType.ASSIGN);
+            
+            if (id.Type != TokenType.ID)
+                throw new ParseException(id.Line, $"Expected identifier after LET, got {id.Type}");
 
+            if (Peek().Type == TokenType.LBRACKET)
+            {
+                Next(); // Пропускаем '['
+                var index = ParseExpr();
+                Expect(TokenType.RBRACKET);
+                Expect(TokenType.ASSIGN);
+                var value = ParseExpr();
+                
+                return new AssignIndexStmt
+                {
+                    Target = id.Text,
+                    Index = index,
+                    Value = value,
+                    Line = letToken.Line
+                };
+            }
+            
+            Expect(TokenType.ASSIGN);
+            var expr = ParseExpr();
+            
             return new LetStmt
             {
                 Id = id.Text,
-                Expression = ParseExpr(),
+                Expression = expr,
                 Line = letToken.Line
             };
         }
@@ -286,6 +308,7 @@ namespace VM.Parser
                 if (!IsBinaryOperator(op.Type)) break;
 
                 Next();
+                
                 var right = ParseBinaryExpr(precedence + 1);
                 left = new BinaryExpr
                 {
@@ -326,16 +349,42 @@ namespace VM.Parser
             {
                 return ParseFuncCall();
             }
-
-            token = Next();
-            return token.Type switch
+    
+            if (token.Type == TokenType.ARRAY)
             {
-                TokenType.NUMBER => new NumberExpr { Value = token.Text, Line = token.Line },
-                TokenType.STRING => new StringExpr { Value = token.Text, Line = token.Line },
-                TokenType.ID => new VarExpr { Name = token.Text, Line = token.Line },
-                _ => throw new ParseException(token.Line,
-                    $"Unexpected token in expression: {token.Type}")
-            };
+                Next();
+                Expect(TokenType.LPAREN);
+                var sizeExpr = ParseExpr();
+                Expect(TokenType.RPAREN);
+                return new NewArrayExpr
+                {
+                    Size = sizeExpr,
+                    Line = token.Line
+                };
+            }
+    
+            token = Next();
+            switch (token.Type)
+            {
+                case TokenType.NUMBER:
+                    return new NumberExpr { Value = token.Text, Line = token.Line };
+                case TokenType.STRING:
+                    return new StringExpr { Value = token.Text, Line = token.Line };
+                case TokenType.ID:
+                    if (Peek().Type != TokenType.LBRACKET) return new VarExpr { Name = token.Text, Line = token.Line };
+                    Next(); // Пропускаем '['
+                    var index = ParseExpr();
+                    Expect(TokenType.RBRACKET);
+                    return new IndexExpr
+                    {
+                        Target = new VarExpr { Name = token.Text, Line = token.Line },
+                        Index = index,
+                        Line = token.Line
+                    };
+                default:
+                    throw new ParseException(token.Line,
+                        $"Unexpected token in expression: {token.Type}");
+            }
         }
 
         private ExprNode ParseFuncCall()

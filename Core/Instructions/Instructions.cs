@@ -1,4 +1,6 @@
-﻿namespace VM.Core.Instructions
+﻿using System.Text;
+
+namespace VM.Core.Instructions
 {
     public enum VmType : byte
     {
@@ -20,11 +22,13 @@
         public float AsFloat() => Type == VmType.FLOAT ? (float)Value : throw new VmTypeException(Type, VmType.FLOAT);
         public string AsString() => Type == VmType.STRING ? (string)Value : throw new VmTypeException(Type, VmType.STRING);
         public bool AsBool() => Type == VmType.BOOL ? (bool)Value : throw new VmTypeException(Type, VmType.BOOL);
+        public VmArray AsArray() => Type == VmType.ARRAY ? (VmArray)Value : throw new VmTypeException(Type, VmType.ARRAY);
 
         public static VmValue FromInt(int value) => new() { Type = VmType.INT, Value = value };
         public static VmValue FromFloat(float value) => new() { Type = VmType.FLOAT, Value = value };
         public static VmValue FromString(string value) => new() { Type = VmType.STRING, Value = value };
         public static VmValue FromBool(bool value) => new() { Type = VmType.BOOL, Value = value };
+        public static VmValue FromArray(VmArray value) => new() { Type = VmType.ARRAY, Value = value };
     }
 
     public class DataStack
@@ -70,7 +74,17 @@
         public override void Execute(ExContext context)
         {
             var value = context.DataStack.Pop();
-            Console.WriteLine($"[PRINT] {value.Value}");
+            string output = value.Type switch
+            {
+                VmType.INT => value.AsInt().ToString(),
+                VmType.FLOAT => value.AsFloat().ToString(),
+                VmType.STRING => value.AsString(),
+                VmType.BOOL => value.AsBool().ToString(),
+                VmType.ARRAY => value.AsArray().ToString(),
+                VmType.NULL => "null",
+                _ => throw new VmTypeException($"Cannot print type {value.Type}")
+            };
+            Console.WriteLine(output);
         }
     }
 
@@ -396,4 +410,87 @@
             context.DataStack.Push(VmValue.FromBool(result));
         }
     }
+    public class VmArray
+    {
+        private readonly VmValue[] _elements;
+        public string ElementType { get; }
+
+        public VmArray(int size, string elementType = "any")
+        {
+            _elements = new VmValue[size];
+            ElementType = elementType;
+            for (int i = 0; i < size; i++)
+                _elements[i] = new VmValue { Type = VmType.NULL, Value = null }; // Инициализация null-значениями
+        }
+
+        public VmValue Get(int index)
+        {
+            if (index < 0 || index >= _elements.Length)
+                throw new VmException($"Array index out of range: {index}");
+            return _elements[index];
+        }
+
+        public void Set(int index, VmValue value)
+        {
+            if (index < 0 || index >= _elements.Length)
+                throw new VmException($"Array index out of range: {index}");
+            _elements[index] = value;
+        }
+
+        public int Length => _elements.Length;
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb.Append('[');
+            for (int i = 0; i < _elements.Length; i++)
+            {
+                if (i > 0) sb.Append(", ");
+                sb.Append(_elements[i].Value?.ToString() ?? "null");
+            }
+            sb.Append(']');
+            return sb.ToString();
+        }
+    }
+    public class NewArrayInstruction : Instruction
+    {
+        public NewArrayInstruction() : base(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array") { }
+
+        public override void Execute(ExContext context)
+        {
+            var size = context.DataStack.Pop().AsInt();
+            if (size < 0)
+                throw new VmException("Array size cannot be negative");
+            var array = new VmArray(size, "any");
+            context.DataStack.Push(VmValue.FromArray(array));
+        }
+    }
+
+    public class GetIndexInstruction : Instruction
+    {
+        public GetIndexInstruction() : base(OpCode.GETINDEX, "GETINDEX", 0, "array index → value") { }
+
+        public override void Execute(ExContext context)
+        {
+            var index = context.DataStack.Pop().AsInt();
+            var array = context.DataStack.Pop().AsArray();
+            var value = array.Get(index);
+            context.DataStack.Push(value);
+        }
+    }
+
+    public class SetIndexInstruction : Instruction
+    {
+        public SetIndexInstruction() : base(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array") { }
+
+        public override void Execute(ExContext context)
+        {
+            var value = context.DataStack.Pop();
+            var index = context.DataStack.Pop().AsInt();
+            var array = context.DataStack.Pop().AsArray();
+            array.Set(index, value);
+            context.DataStack.Push(VmValue.FromArray(array)); // Возвращаем массив на стек
+        }
+    }
+    
 } 

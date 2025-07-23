@@ -69,6 +69,11 @@
         FSWRITE = 0x81,
         FSEXISTS = 0x82,
         FSDELETE = 0x83,
-        FSAPPEND = 0x84
+        FSAPPEND = 0x84,
+        
+        //Массивы
+        NEWARRAY = 0x85,
+        GETINDEX = 0x86,
+        SETINDEX = 0x87,
     }
 }

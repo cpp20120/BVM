@@ -89,6 +89,33 @@ namespace VM.Core.IR
         public List<IrNode> Visit(StringExpr node) => throw new NotSupportedException();
         public List<IrNode> Visit(VarExpr node) => throw new NotSupportedException();
         public List<IrNode> Visit(FuncCallExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(CustomCallExpr node) => throw new NotSupportedException();
+        
+        public List<IrNode> Visit(AssignIndexStmt node) =>
+        [
+            new IrStoreIndex
+            {
+                Target = new IrVar { Name = node.Target, Line = node.Line },
+                Index = CompileExpr(node.Index),
+                Value = CompileExpr(node.Value),
+                Line = node.Line
+            }
+        ];
+
+        public List<IrNode> Visit(NewArrayExpr node)
+        {
+            return [new IrNewArray() {
+                Size = CompileExpr(node.Size),
+                ElementType = "any",
+                Line = node.Line
+            }];
+        }
+        public List<IrNode> Visit(ExprNode node)
+        {
+            return node.Accept(this);
+        }
+        
+        public List<IrNode> Visit(IndexExpr node) => throw new NotSupportedException("IndexExpr должен обрабатываться через CompileExpr");
 
         private List<IrNode> CompileBlock(List<StatementNode> stmts)
         {
@@ -124,6 +151,25 @@ namespace VM.Core.IR
                     Args = f.Arguments.ConvertAll(CompileExpr),
                     Line = f.Line
                 },
+                IndexExpr i => new IrIndex
+                {
+                    Target = CompileExpr(i.Target),
+                    Index = CompileExpr(i.Index),
+                    Line = i.Line
+                },
+                CustomCallExpr c => new IrCall
+                {
+                    Name = c.Name.ToLower(),
+                    Args = c.Args.ConvertAll(CompileExpr),
+                    Line = c.Line
+                },
+                NewArrayExpr a => new IrNewArray 
+                {
+                    Size = CompileExpr(a.Size),
+                    ElementType = "any",
+                    Line = a.Line
+                },
+
                 _ => throw new Exception($"Неизвестный тип выражения: {expr.GetType().Name}")
             };
         }

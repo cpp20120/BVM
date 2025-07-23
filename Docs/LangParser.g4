@@ -66,7 +66,11 @@ expr:
     | left=expr op=AND right=expr                    #logicalExpr
     | left=expr op=OR right=expr                     #logicalExpr
     | func=(LEN | VAL | ISNAN) LPAREN expr RPAREN    #funcCallExpr
+    | ID LBRACKET expr RBRACKET                      #indexExpr
+    | ID LPAREN expr RPAREN                          #customFuncCallExpr
+    | ARRAY LPAREN expr RPAREN                       #arrayExpr
     | ID                                              #varExpr
     | NUMBER                                          #numExpr
     | STRINGLITERAL                                   #strExpr
+
 ;

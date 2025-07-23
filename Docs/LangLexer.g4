@@ -26,6 +26,10 @@ COMMA  : ',' ;
 LPAREN : '(' ;
 RPAREN : ')' ;
 
+LBRACKET : '[' ;
+RBRACKET : ']' ;
+
+
 // functions
 LEN : 'LEN' | 'len' ;
 VAL : 'VAL' | 'val' ;
