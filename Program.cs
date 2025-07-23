@@ -1,10 +1,8 @@
 using VM.Core;
-using VM.Core.Exceptions;
 using VM.Core.Instructions;
 using VM.Parser;
 using VM.Core.IR;
 using VM.Core.IR.Nodes;
-using VM.Runtime;
 
 const string code = @"
 INPUT A, B
@@ -69,11 +67,11 @@ Console.WriteLine(ast);
 
 // === IR ===
 var compiler = new AstToIrCompiler();
-var ir = ast.Accept(compiler);
+List<IrNode?> ir = ast.Accept(compiler);
 
 Console.WriteLine("\n=== IR ===");
 foreach (var node in ir)
-    Console.WriteLine($"{node.GetType().Name} (Line {node.Line})");
+    Console.WriteLine($"{node?.GetType().Name} (Line {node?.Line})");
 
 // === BYTECODE ===
 var irCompiler = new IrToBytecodeCompiler();
@@ -134,7 +132,7 @@ try
         instr.Execute(context);
     }
 }
-catch (VMException e)
+catch (VmException e)
 {
     Console.WriteLine($"VM halted: {e.Message}");
 }

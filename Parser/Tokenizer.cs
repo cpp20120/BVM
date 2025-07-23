@@ -16,7 +16,7 @@ namespace VM.Parser
     public class Tokenizer(string sourceCode)
     {
         private readonly string[] _lines = sourceCode.Replace("\r\n", "\n").Split('\n');
-        private int _lineIndex = 0;
+        private int _lineIndex;
         private int _currentLine = 1;
 
         private static readonly Dictionary<string, TokenType> Keywords = new()

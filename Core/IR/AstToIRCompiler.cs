@@ -3,44 +3,40 @@ using VM.Core.IR.Nodes;
 
 namespace VM.Core.IR
 {
-    public class AstToIrCompiler : IAstVisitor<List<IRNode>>
+    public class AstToIrCompiler : IAstVisitor<List<IrNode>>
     {
-        public List<IRNode> Visit(ProgramNode node)
+        public List<IrNode> Visit(ProgramNode node)
         {
-            var list = new List<IRNode>();
+            var list = new List<IrNode>();
             foreach (var stmt in node.Statements)
                 list.AddRange(stmt.Accept(this));
             return list;
         }
 
-        public List<IRNode> Visit(PrintStmt node)
+        public List<IrNode> Visit(PrintStmt node)
         {
-            var expr = node.Expressions.Count > 0 ? CompileExpr(node.Expressions[0]) : new IRConst { Value = "", Type = "string" };
-            return [ new IRPrint { Expr = expr, Line = node.Line } ];
+            var expr = node.Expressions.Count > 0 ? CompileExpr(node.Expressions[0]) : new IrConst { Value = "", Type = "string" };
+            return [ new IrPrint { Expr = expr, Line = node.Line } ];
         }
 
-        public List<IRNode> Visit(LetStmt node)
+        public List<IrNode> Visit(LetStmt node) =>
+        [ new IrLet
         {
-            return [ new IRLet
-            {
-                Name = node.Id!,
-                Expr = CompileExpr(node.Expression!),
-                Line = node.Line
-            } ];
-        }
+            Name = node.Id!,
+            Expr = CompileExpr(node.Expression!),
+            Line = node.Line
+        } ];
 
-        public List<IRNode> Visit(InputStmt node)
+        public List<IrNode> Visit(InputStmt node) =>
+        [ new IrInput
         {
-            return [ new IRInput
-            {
-                VarNames = [..node.Ids],
-                Line = node.Line
-            } ];
-        }
+            VarNames = [..node.Ids],
+            Line = node.Line
+        } ];
 
-        public List<IRNode> Visit(IfStmt node)
+        public List<IrNode> Visit(IfStmt node)
         {
-            var irIf = new IRIf
+            var irIf = new IrIf
             {
                 Condition = CompileExpr(node.Condition),
                 ThenBlock = CompileBlock(node.ThenBranch),
@@ -50,19 +46,17 @@ namespace VM.Core.IR
             return [ irIf ];
         }
 
-        public List<IRNode> Visit(WhileStmt node)
+        public List<IrNode> Visit(WhileStmt node) =>
+        [ new IrWhile
         {
-            return [ new IRWhile
-            {
-                Condition = CompileExpr(node.Condition!),
-                Body = CompileBlock(node.Body),
-                Line = node.Line
-            } ];
-        }
+            Condition = CompileExpr(node.Condition!),
+            Body = CompileBlock(node.Body),
+            Line = node.Line
+        } ];
 
-        public List<IRNode> Visit(RepeatStmt node)
+        public List<IrNode> Visit(RepeatStmt node)
         {
-            return [ new IRRepeat
+            return [ new IrRepeat
             {
                 Body = CompileBlock(node.Body),
                 Condition = CompileExpr(node.Condition!),
@@ -70,69 +64,61 @@ namespace VM.Core.IR
             } ];
         }
 
-        public List<IRNode> Visit(ForStmt node)
+        public List<IrNode> Visit(ForStmt node) =>
+        [ new IrFor
         {
-            return [ new IRFor
-            {
-                VarName = node.Variable,
-                From = CompileExpr(node.From),
-                To = CompileExpr(node.To),
-                Step = node.Step != null ? CompileExpr(node.Step) : null,
-                Body = CompileBlock(node.Body),
-                Line = node.Line
-            } ];
-        }
+            VarName = node.Variable,
+            From = CompileExpr(node.From),
+            To = CompileExpr(node.To),
+            Step = node.Step != null ? CompileExpr(node.Step) : null,
+            Body = CompileBlock(node.Body),
+            Line = node.Line
+        } ];
 
-        public List<IRNode> Visit(ContinueStmt node)
-        {
-            return [ new IRGoto { Label = "__continue__", Line = node.Line } ];
-        }
+        public List<IrNode> Visit(ContinueStmt node) => [ new IrGoto { Label = "__continue__", Line = node.Line } ];
 
-        public List<IRNode> Visit(ExitStmt node)
-        {
-            return [ new IRGoto { Label = "__break__", Line = node.Line } ];
-        }
+        public List<IrNode> Visit(ExitStmt node) => [ new IrGoto { Label = "__break__", Line = node.Line } ];
 
-        public List<IRNode> Visit(BinaryExpr node)
+        public List<IrNode> Visit(BinaryExpr node)
         {
             throw new NotSupportedException("BinaryExpr должен обрабатываться как часть CompileExpr");
         }
 
-        public List<IRNode> Visit(UnaryExpr node) => throw new NotSupportedException();
-        public List<IRNode> Visit(NumberExpr node) => throw new NotSupportedException();
-        public List<IRNode> Visit(StringExpr node) => throw new NotSupportedException();
-        public List<IRNode> Visit(VarExpr node) => throw new NotSupportedException();
-        public List<IRNode> Visit(FuncCallExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(UnaryExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(NumberExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(StringExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(VarExpr node) => throw new NotSupportedException();
+        public List<IrNode> Visit(FuncCallExpr node) => throw new NotSupportedException();
 
-        private List<IRNode> CompileBlock(List<StatementNode> stmts)
+        private List<IrNode> CompileBlock(List<StatementNode> stmts)
         {
-            var list = new List<IRNode>();
+            var list = new List<IrNode>();
             foreach (var stmt in stmts)
                 list.AddRange(stmt.Accept(this));
             return list;
         }
 
-        private IRNode CompileExpr(ExprNode expr)
+        private static IrNode CompileExpr(ExprNode expr)
         {
             return expr switch
             {
-                NumberExpr n => new IRConst { Value = n.Value, Type = "number", Line = n.Line },
-                StringExpr s => new IRConst { Value = s.Value, Type = "string", Line = s.Line },
-                VarExpr v => new IRVar { Name = v.Name, Line = v.Line },
-                BinaryExpr b => new IRBinary
+                NumberExpr n => new IrConst { Value = n.Value, Type = "number", Line = n.Line },
+                StringExpr s => new IrConst { Value = s.Value, Type = "string", Line = s.Line },
+                VarExpr v => new IrVar { Name = v.Name, Line = v.Line },
+                BinaryExpr b => new IrBinary
                 {
                     Op = b.Operator.ToString(),
                     Left = CompileExpr(b.Left!),
                     Right = CompileExpr(b.Right!),
                     Line = b.Line
                 },
-                UnaryExpr u => new IRUnary
+                UnaryExpr u => new IrUnary
                 {
                     Op = u.Operator.ToString(),
                     Operand = CompileExpr(u.Operand!),
                     Line = u.Line
                 },
-                FuncCallExpr f => new IRCall
+                FuncCallExpr f => new IrCall
                 {
                     Name = f.Func.ToString().ToLower(),
                     Args = f.Arguments.ConvertAll(CompileExpr),

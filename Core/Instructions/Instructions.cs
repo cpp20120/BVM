@@ -1,48 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using VM.Core.Exceptions;
-using VM.Core.Instructions;
-
-
-
-namespace VM.Core.Instructions
+﻿namespace VM.Core.Instructions
 {
-    public enum VMType : byte
+    public enum VmType : byte
     {
-        Int,
-        Float,
-        String,
-        Bool,
-        Array,
-        Struct,
-        Null
+        INT,
+        FLOAT,
+        STRING,
+        BOOL,
+        ARRAY,
+        STRUCT,
+        NULL
     }
 
-    public struct VMValue
+    public struct VmValue
     {
-        public VMType Type;
+        public VmType Type;
         public object Value;
 
-        public int AsInt() => Type == VMType.Int ? (int)Value : throw new VMTypeException(Type, VMType.Int);
-        public float AsFloat() => Type == VMType.Float ? (float)Value : throw new VMTypeException(Type, VMType.Float);
-        public string AsString() => Type == VMType.String ? (string)Value : throw new VMTypeException(Type, VMType.String);
-        public bool AsBool() => Type == VMType.Bool ? (bool)Value : throw new VMTypeException(Type, VMType.Bool);
+        public int AsInt() => Type == VmType.INT ? (int)Value : throw new VmTypeException(Type, VmType.INT);
+        public float AsFloat() => Type == VmType.FLOAT ? (float)Value : throw new VmTypeException(Type, VmType.FLOAT);
+        public string AsString() => Type == VmType.STRING ? (string)Value : throw new VmTypeException(Type, VmType.STRING);
+        public bool AsBool() => Type == VmType.BOOL ? (bool)Value : throw new VmTypeException(Type, VmType.BOOL);
 
-        public static VMValue FromInt(int value) => new() { Type = VMType.Int, Value = value };
-        public static VMValue FromFloat(float value) => new() { Type = VMType.Float, Value = value };
-        public static VMValue FromString(string value) => new() { Type = VMType.String, Value = value };
-        public static VMValue FromBool(bool value) => new() { Type = VMType.Bool, Value = value };
+        public static VmValue FromInt(int value) => new() { Type = VmType.INT, Value = value };
+        public static VmValue FromFloat(float value) => new() { Type = VmType.FLOAT, Value = value };
+        public static VmValue FromString(string value) => new() { Type = VmType.STRING, Value = value };
+        public static VmValue FromBool(bool value) => new() { Type = VmType.BOOL, Value = value };
     }
 
     public class DataStack
     {
-        private readonly Stack<VMValue> _stack = new();
+        private readonly Stack<VmValue> _stack = new();
         public int Count => _stack.Count;
         public bool IsEmpty => _stack.Count == 0;
-        public void Push(VMValue value) => _stack.Push(value);
-        public VMValue Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VMStackException("Pop from empty stack");
-        public VMValue Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VMStackException("Peek from empty stack");
+        public void Push(VmValue value) => _stack.Push(value);
+        public VmValue Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty stack");
+        public VmValue Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty stack");
     }
 
     public class CallStack
@@ -51,42 +43,30 @@ namespace VM.Core.Instructions
         public int Count => _stack.Count;
         public bool IsEmpty => _stack.Count == 0;
         public void Push(int value) => _stack.Push(value);
-        public int Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VMStackException("Pop from empty call stack");
-        public int Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VMStackException("Peek from empty call stack");
+        public int Pop() => _stack.Count > 0 ? _stack.Pop() : throw new VmStackException("Pop from empty call stack");
+        public int Peek() => _stack.Count > 0 ? _stack.Peek() : throw new VmStackException("Peek from empty call stack");
     }
 
-    public abstract class Instruction
+    public abstract class Instruction(OpCode code, string mnemonic, int operandSize = 0, string stackEffect = "")
     {
-        public OpCode Code { get; }
-        public string Mnemonic { get; }
-        public int OperandSize { get; }
-        public string StackEffect { get; }
-
-        protected Instruction(OpCode code, string mnemonic, int operandSize = 0, string stackEffect = "")
-        {
-            Code = code;
-            Mnemonic = mnemonic;
-            OperandSize = operandSize;
-            StackEffect = stackEffect;
-        }
+        public OpCode Code { get; } = code;
+        public string Mnemonic { get; } = mnemonic;
+        public int OperandSize { get; } = operandSize;
+        public string StackEffect { get; } = stackEffect;
 
         public abstract void Execute(ExContext context);
     }
-    public class PushInstruction : Instruction
+    public class PushInstruction() : Instruction(OpCode.PUSH, "PUSH", sizeof(int), "→ value")
     {
-        public PushInstruction() : base(OpCode.PUSH, "PUSH", sizeof(int), "→ value") { }
-
         public override void Execute(ExContext context)
         {
-            int value = context.ReadInt();
-            context.DataStack.Push(VMValue.FromInt(value));
+            var value = context.ReadInt();
+            context.DataStack.Push(VmValue.FromInt(value));
         }
     }
 
-    public class PrintInstruction : Instruction
+    public class PrintInstruction() : Instruction(OpCode.PRINT, "PRINT", 0, "value →")
     {
-        public PrintInstruction() : base(OpCode.PRINT, "PRINT", 0, "value →") { }
-
         public override void Execute(ExContext context)
         {
             var value = context.DataStack.Pop();
@@ -94,20 +74,16 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class PopInstruction : Instruction
+    public class PopInstruction() : Instruction(OpCode.POP, "POP", 0, "value →")
     {
-        public PopInstruction() : base(OpCode.POP, "POP", 0, "value →") {}
-
         public override void Execute(ExContext context)
         {
             context.DataStack.Pop();
         }
     }
 
-    public class DupInstruction : Instruction
+    public class DupInstruction() : Instruction(OpCode.DUP, "DUP", 0, "a → a a")
     {
-        public DupInstruction() : base(OpCode.DUP, "DUP", 0, "a → a a") {}
-
         public override void Execute(ExContext context)
         {
             var value = context.DataStack.Peek();
@@ -115,10 +91,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class SwapInstruction : Instruction
+    public class SwapInstruction() : Instruction(OpCode.SWAP, "SWAP", 0, "a b → b a")
     {
-        public SwapInstruction() : base(OpCode.SWAP, "SWAP", 0, "a b → b a") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
@@ -128,10 +102,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class OverInstruction : Instruction
+    public class OverInstruction() : Instruction(OpCode.OVER, "OVER", 0, "a b → a b a")
     {
-        public OverInstruction() : base(OpCode.OVER, "OVER", 0, "a b → a b a") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
@@ -142,332 +114,286 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class MulInstruction : Instruction
+    public class MulInstruction() : Instruction(OpCode.MUL, "MUL", 0, "a b → (a*b)")
     {
-        public MulInstruction() : base(OpCode.MUL, "MUL", 0, "a b → (a*b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int && b.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(a.AsInt() * b.AsInt()));
-            else if (a.Type == VMType.Float && b.Type == VMType.Float)
-                context.DataStack.Push(VMValue.FromFloat(a.AsFloat() * b.AsFloat()));
+            if (a.Type == VmType.INT && b.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(a.AsInt() * b.AsInt()));
+            else if (a.Type == VmType.FLOAT && b.Type == VmType.FLOAT)
+                context.DataStack.Push(VmValue.FromFloat(a.AsFloat() * b.AsFloat()));
             else
-                throw new VMTypeException($"Cannot multiply types {a.Type} and {b.Type}");
+                throw new VmTypeException($"Cannot multiply types {a.Type} and {b.Type}");
         }
     }
 
-    public class DivInstruction : Instruction
+    public class DivInstruction() : Instruction(OpCode.DIV, "DIV", 0, "a b → (a/b)")
     {
-        public DivInstruction() : base(OpCode.DIV, "DIV", 0, "a b → (a/b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int && b.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(a.AsInt() / b.AsInt()));
-            else if (a.Type == VMType.Float && b.Type == VMType.Float)
-                context.DataStack.Push(VMValue.FromFloat(a.AsFloat() / b.AsFloat()));
+            if (a.Type == VmType.INT && b.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(a.AsInt() / b.AsInt()));
+            else if (a.Type == VmType.FLOAT && b.Type == VmType.FLOAT)
+                context.DataStack.Push(VmValue.FromFloat(a.AsFloat() / b.AsFloat()));
             else
-                throw new VMTypeException($"Cannot divide types {a.Type} and {b.Type}");
+                throw new VmTypeException($"Cannot divide types {a.Type} and {b.Type}");
         }
     }
 
-    public class ModInstruction : Instruction
+    public class ModInstruction() : Instruction(OpCode.MOD, "MOD", 0, "a b → (a%b)")
     {
-        public ModInstruction() : base(OpCode.MOD, "MOD", 0, "a b → (a%b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int && b.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(a.AsInt() % b.AsInt()));
+            if (a.Type == VmType.INT && b.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(a.AsInt() % b.AsInt()));
             else
-                throw new VMTypeException("MOD requires integer operands");
+                throw new VmTypeException("MOD requires integer operands");
         }
     }
 
-    public class NegInstruction : Instruction
+    public class NegInstruction() : Instruction(OpCode.NEG, "NEG", 0, "a → (-a)")
     {
-        public NegInstruction() : base(OpCode.NEG, "NEG", 0, "a → (-a)") {}
-
         public override void Execute(ExContext context)
         {
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(-a.AsInt()));
-            else if (a.Type == VMType.Float)
-                context.DataStack.Push(VMValue.FromFloat(-a.AsFloat()));
+            if (a.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(-a.AsInt()));
+            else if (a.Type == VmType.FLOAT)
+                context.DataStack.Push(VmValue.FromFloat(-a.AsFloat()));
             else
-                throw new VMTypeException("NEG requires numeric operand");
+                throw new VmTypeException("NEG requires numeric operand");
         }
     }
 
-    public class NotInstruction : Instruction
+    public class NotInstruction() : Instruction(OpCode.NOT, "NOT", 0, "a → !a")
     {
-        public NotInstruction() : base(OpCode.NOT, "NOT", 0, "a → !a") {}
-
         public override void Execute(ExContext context)
         {
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Bool)
-                context.DataStack.Push(VMValue.FromBool(!a.AsBool()));
+            if (a.Type == VmType.BOOL)
+                context.DataStack.Push(VmValue.FromBool(!a.AsBool()));
             else
-                throw new VMTypeException("NOT requires boolean operand");
+                throw new VmTypeException("NOT requires boolean operand");
         }
     }
 
-    public class CmpInstruction : Instruction
+    public class CmpInstruction() : Instruction(OpCode.CMP, "CMP", 0, "a b → (a<=>b)")
     {
-        public CmpInstruction() : base(OpCode.CMP, "CMP", 0, "a b → (a<=>b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            int result = a.Type switch
+            var result = a.Type switch
             {
-                VMType.Int => a.AsInt().CompareTo(b.AsInt()),
-                VMType.Float => a.AsFloat().CompareTo(b.AsFloat()),
-                VMType.String => string.Compare(a.AsString(), b.AsString(), StringComparison.Ordinal),
-                _ => throw new VMTypeException("CMP requires comparable types")
+                VmType.INT => a.AsInt().CompareTo(b.AsInt()),
+                VmType.FLOAT => a.AsFloat().CompareTo(b.AsFloat()),
+                VmType.STRING => string.Compare(a.AsString(), b.AsString(), StringComparison.Ordinal),
+                _ => throw new VmTypeException("CMP requires comparable types")
             };
 
-            context.DataStack.Push(VMValue.FromInt(result));
+            context.DataStack.Push(VmValue.FromInt(result));
         }
     }
 
-    public class HaltInstruction : Instruction
+    public class HaltInstruction() : Instruction(OpCode.HALT, "HALT", 0, "→")
     {
-        public HaltInstruction() : base(OpCode.HALT, "HALT", 0, "→") {}
-
         public override void Execute(ExContext context)
         {
-            throw new VMException("Execution halted by HALT instruction");
+            throw new VmException("Execution halted by HALT instruction");
         }
     }
 
-    public class RetInstruction : Instruction
+    public class RetInstruction() : Instruction(OpCode.RET, "RET", 0, "ret_addr →")
     {
-        public RetInstruction() : base(OpCode.RET, "RET", 0, "ret_addr →") {}
-
         public override void Execute(ExContext context)
         {
             if (context.CallStack.IsEmpty)
-                throw new VMException("Call stack is empty, cannot return");
+                throw new VmException("Call stack is empty, cannot return");
 
             context.InstructionPointer = context.CallStack.Pop();
         }
     }
 
-    public class CallInstruction : Instruction
+    public class CallInstruction() : Instruction(OpCode.CALL, "CALL", sizeof(int), "→ ret_addr")
     {
-        public CallInstruction() : base(OpCode.CALL, "CALL", sizeof(int), "→ ret_addr") {}
-
         public override void Execute(ExContext context)
         {
-            int targetAddr = context.ReadInt();
+            var  targetAddr = context.ReadInt();
             context.CallStack.Push(context.InstructionPointer);
             context.InstructionPointer = targetAddr;
         }
     }
 
-    public class JnzInstruction : Instruction
+    public class JnzInstruction() : Instruction(OpCode.JNZ, "JNZ", sizeof(short), "cond →")
     {
-        public JnzInstruction() : base(OpCode.JNZ, "JNZ", sizeof(short), "cond →") {}
-
         public override void Execute(ExContext context)
         {
-            short offset = context.ReadShort();
+            var offset = context.ReadShort();
             var condition = context.DataStack.Pop();
 
-            bool jump = condition.Type switch
+            var jump = condition.Type switch
             {
-                VMType.Int => condition.AsInt() != 0,
-                VMType.Bool => condition.AsBool(),
-                _ => throw new VMTypeException("Invalid type for JNZ condition")
+                VmType.INT => condition.AsInt() != 0,
+                VmType.BOOL => condition.AsBool(),
+                _ => throw new VmTypeException("Invalid type for JNZ condition")
             };
 
             if (jump)
                 context.InstructionPointer += offset;
         }
     }
-    public class AddInstruction : Instruction
+    public class AddInstruction() : Instruction(OpCode.ADD, "ADD", 0, "a b → (a+b)")
     {
-        public AddInstruction() : base(OpCode.ADD, "ADD", 0, "a b → (a+b)") {}
-
         public override void  Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int && b.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(a.AsInt() + b.AsInt()));
-            else if (a.Type == VMType.Float && b.Type == VMType.Float)
-                context.DataStack.Push(VMValue.FromFloat(a.AsFloat() + b.AsFloat()));
+            if (a.Type == VmType.INT && b.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(a.AsInt() + b.AsInt()));
+            else if (a.Type == VmType.FLOAT && b.Type == VmType.FLOAT)
+                context.DataStack.Push(VmValue.FromFloat(a.AsFloat() + b.AsFloat()));
             else
-                throw new VMTypeException($"ADD not supported for {a.Type} and {b.Type}");
+                throw new VmTypeException($"ADD not supported for {a.Type} and {b.Type}");
         }
     }
 
-    public class SubInstruction : Instruction
+    public class SubInstruction() : Instruction(OpCode.SUB, "SUB", 0, "a b → (a-b)")
     {
-        public SubInstruction() : base(OpCode.SUB, "SUB", 0, "a b → (a-b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type == VMType.Int && b.Type == VMType.Int)
-                context.DataStack.Push(VMValue.FromInt(a.AsInt() - b.AsInt()));
-            else if (a.Type == VMType.Float && b.Type == VMType.Float)
-                context.DataStack.Push(VMValue.FromFloat(a.AsFloat() - b.AsFloat()));
+            if (a.Type == VmType.INT && b.Type == VmType.INT)
+                context.DataStack.Push(VmValue.FromInt(a.AsInt() - b.AsInt()));
+            else if (a.Type == VmType.FLOAT && b.Type == VmType.FLOAT)
+                context.DataStack.Push(VmValue.FromFloat(a.AsFloat() - b.AsFloat()));
             else
-                throw new VMTypeException("SUB requires numeric operands");
+                throw new VmTypeException("SUB requires numeric operands");
         }
     }
-    public class EqInstruction : Instruction
+    public class EqInstruction() : Instruction(OpCode.EQ, "EQ", 0, "a b → (a==b)")
     {
-        public EqInstruction() : base(OpCode.EQ, "EQ", 0, "a b → (a==b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
-            context.DataStack.Push(VMValue.FromBool(Equals(a.Value, b.Value)));
+            context.DataStack.Push(VmValue.FromBool(Equals(a.Value, b.Value)));
         }
     }
 
-    public class NeqInstruction : Instruction
+    public class NeqInstruction() : Instruction(OpCode.NEQ, "NEQ", 0, "a b → (a!=b)")
     {
-        public NeqInstruction() : base(OpCode.NEQ, "NEQ", 0, "a b → (a!=b)") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
-            context.DataStack.Push(VMValue.FromBool(!Equals(a.Value, b.Value)));
+            context.DataStack.Push(VmValue.FromBool(!Equals(a.Value, b.Value)));
         }
     }
-    public class LoadInstruction : Instruction
+    public class LoadInstruction() : Instruction(OpCode.LOAD, "LOAD", sizeof(int), "→ value")
     {
-        
-        public LoadInstruction() : base(OpCode.LOAD, "LOAD", sizeof(int), "→ value") {}
-
         public override void Execute(ExContext context)
         {
-            int index = context.ReadInt();
+            var index = context.ReadInt();
             context.DataStack.Push(context.LocalVariables[index]);
         }
     }
 
-    public class StoreInstruction : Instruction
+    public class StoreInstruction() : Instruction(OpCode.STORE, "STORE", sizeof(int), "value →")
     {
-        public StoreInstruction() : base(OpCode.STORE, "STORE", sizeof(int), "value →") {}
-
         public override void Execute(ExContext context)
         {
-            int index = context.ReadInt();
+            var index = context.ReadInt();
             var value = context.DataStack.Pop();
             context.LocalVariables[index] = value;
         }
     }
-    public class JmpInstruction : Instruction
+    public class JmpInstruction() : Instruction(OpCode.JMP, "JMP", sizeof(short), "→")
     {
-        public JmpInstruction() : base(OpCode.JMP, "JMP", sizeof(short), "→") {}
-
         public override void Execute(ExContext context)
         {
-            short offset = context.ReadShort();
+            var offset = context.ReadShort();
             context.InstructionPointer += offset;
         }
     }
-    public class JzInstruction : Instruction
+    public class JzInstruction() : Instruction(OpCode.JZ, "JZ", sizeof(short), "cond →")
     {
-        public JzInstruction() : base(OpCode.JZ, "JZ", sizeof(short), "cond →") {}
-
         public override void Execute(ExContext context)
         {
-            short offset = context.ReadShort();
+            var offset = context.ReadShort();
             var condition = context.DataStack.Pop();
 
-            bool isZero = condition.Type switch
+            var isZero = condition.Type switch
             {
-                VMType.Int => condition.AsInt() == 0,
-                VMType.Bool => !condition.AsBool(),
-                _ => throw new VMTypeException("Invalid type for JZ condition")
+                VmType.INT => condition.AsInt() == 0,
+                VmType.BOOL => !condition.AsBool(),
+                _ => throw new VmTypeException("Invalid type for JZ condition")
             };
 
             if (isZero)
                 context.InstructionPointer += offset;
         }
     }
-    public class InputInstruction : Instruction
+    public class InputInstruction() : Instruction(OpCode.INPUT, "INPUT", 0, "→ value")
     {
-        public InputInstruction() : base(OpCode.INPUT, "INPUT", 0, "→ value") {}
-
         public override void Execute(ExContext context)
         {
             Console.Write("INPUT > ");
-            string? line = Console.ReadLine();
+            var line = Console.ReadLine();
 
-            if (int.TryParse(line, out var intVal))
-                context.DataStack.Push(VMValue.FromInt(intVal));
-            else
-                context.DataStack.Push(VMValue.FromString(line ?? ""));
+            context.DataStack.Push(int.TryParse(line, out var intVal)
+                ? VmValue.FromInt(intVal)
+                : VmValue.FromString(line ?? ""));
         }
     }
-    public class PushStringInstruction : Instruction
+    public class PushStringInstruction() : Instruction(OpCode.PUSHS, "PUSHS", -1, "→ value")
     {
-        public PushStringInstruction() : base(OpCode.PUSHS, "PUSHS", -1, "→ value") {}
-
         public override void Execute(ExContext context)
         {
-            int len = context.ReadInt();
-            byte[] bytes = context.ReadBytes(len);
-            string str = System.Text.Encoding.UTF8.GetString(bytes);
-            context.DataStack.Push(VMValue.FromString(str));
+            var len = context.ReadInt();
+            var bytes = context.ReadBytes(len);
+            var str = System.Text.Encoding.UTF8.GetString(bytes);
+            context.DataStack.Push(VmValue.FromString(str));
         }
     }
     
-    public class OrInstruction : Instruction
+    public class OrInstruction() : Instruction(OpCode.OR, "OR", 0, "a b → (a || b)")
     {
-        public OrInstruction() : base(OpCode.OR, "OR", 0, "a b → (a || b)") { }
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            if (a.Type != VMType.Bool || b.Type != VMType.Bool)
-                throw new VMTypeException("OR requires boolean operands");
+            if (a.Type != VmType.BOOL || b.Type != VmType.BOOL)
+                throw new VmTypeException("OR requires boolean operands");
 
-            context.DataStack.Push(VMValue.FromBool(a.AsBool() || b.AsBool()));
+            context.DataStack.Push(VmValue.FromBool(a.AsBool() || b.AsBool()));
         }
     }
 
-    public class AndInstruction : Instruction
+    public class AndInstruction() : Instruction(OpCode.AND, "AND", 2, "a, b → a AND b")
     {
-        public AndInstruction() : base(OpCode.AND, "AND", 2, "a, b → a AND b") {}
-
         public override void Execute(ExContext context)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
 
-            bool result = a.AsBool() && b.AsBool();
-            context.DataStack.Push(VMValue.FromBool(result));
+            var result = a.AsBool() && b.AsBool();
+            context.DataStack.Push(VmValue.FromBool(result));
         }
     }
 } 

@@ -1,66 +1,50 @@
 ﻿using VM.Core.Instructions;
 
-namespace VM.Core.Exceptions
+namespace VM.Core.Instructions
 {
     /// <summary>
     /// Базовое исключение виртуальной машины
     /// </summary>
-    public class VMException : Exception
+    public class VmException(string message, int lineNumber = -1, int ip = -1) : Exception(message)
     {
-        public int LineNumber { get; }
-        public int InstructionPointer { get; }
-
-        public VMException(string message, int lineNumber = -1, int ip = -1) 
-            : base(message)
-        {
-            LineNumber = lineNumber;
-            InstructionPointer = ip;
-        }
+        public int LineNumber { get; } = lineNumber;
+        public int InstructionPointer { get; } = ip;
     }
 
     /// <summary>
     /// Ошибка несоответствия типов
     /// </summary>
-    public class VMTypeException : VMException
+    public class VmTypeException : VmException
     {
-        public VMType ActualType { get; }
-        public VMType ExpectedType { get; }
+        public VmType ActualType { get; }
+        public VmType ExpectedType { get; }
 
-        public VMTypeException(VMType actual, VMType expected, int line = -1, int ip = -1)
+        public VmTypeException(VmType actual, VmType expected, int line = -1, int ip = -1)
             : base($"Type mismatch: expected {expected}, got {actual}", line, ip)
         {
             ActualType = actual;
             ExpectedType = expected;
         }
 
-        public VMTypeException(string message, int line = -1, int ip = -1)
+        public VmTypeException(string message, int line = -1, int ip = -1)
             : base(message, line, ip)
         {
-            ActualType = VMType.Null;
-            ExpectedType = VMType.Null;
+            ActualType = VmType.NULL;
+            ExpectedType = VmType.NULL;
         }
     }
 
     /// <summary>
     /// Ошибка работы со стеком
     /// </summary>
-    public class VMStackException : VMException
-    {
-        public VMStackException(string message, int line = -1, int ip = -1)
-            : base(message, line, ip) { }
-    }
+    public class VmStackException(string message, int line = -1, int ip = -1) : VmException(message, line, ip);
 
     /// <summary>
     /// Ошибка доступа к памяти
     /// </summary>
-    public class VMMemoryException : VMException
+    public class VmMemoryException(int address, string message, int line = -1, int ip = -1)
+        : VmException($"Memory error at 0x{address:X4}: {message}", line, ip)
     {
-        public int Address { get; }
-
-        public VMMemoryException(int address, string message, int line = -1, int ip = -1)
-            : base($"Memory error at 0x{address:X4}: {message}", line, ip)
-        {
-            Address = address;
-        }
+        public int Address { get; } = address;
     }
 }

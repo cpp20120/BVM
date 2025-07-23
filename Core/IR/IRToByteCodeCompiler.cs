@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using VM.Core.IR;
-using VM.Core.IR.Nodes;
+﻿using VM.Core.IR.Nodes;
 using VM.Core.Instructions;
 
-namespace VM.Core
+namespace VM.Core.IR
 {
     public class IrToBytecodeCompiler
     {
         private readonly List<byte> _bytecode = new();
         private readonly Dictionary<string, int> _locals = new();
-        private int _varCounter = 0;
+        private int _varCounter;
 
         private readonly Dictionary<string, int> _labels = new();
         private readonly List<(int Position, string Label)> _fixups = new();
-        private int _labelId = 0;
+        private int _labelId;
 
-        public byte[] Compile(List<IRNode> nodes)
+        public byte[] Compile(List<IrNode?> nodes)
         {
             foreach (var node in nodes)
                 CompileNode(node);
@@ -28,27 +24,27 @@ namespace VM.Core
             return _bytecode.ToArray();
         }
 
-        private void CompileNode(IRNode node)
+        private void CompileNode(IrNode? node)
         {
             switch (node)
             {
-                case IRConst c: CompileConst(c); break;
-                case IRBinary b: CompileBinary(b); break;
-                case IRUnary u: CompileUnary(u); break;
-                case IRVar v: CompileVar(v); break;
-                case IRLet l: CompileLet(l); break;
-                case IRPrint p: CompilePrint(p); break;
-                case IRInput i: CompileInput(i); break;
-                case IRBlock b: foreach (var stmt in b.Statements) CompileNode(stmt); break;
-                case IRIf iff: CompileIf(iff); break;
-                case IRWhile wh: CompileWhile(wh); break;
-                case IRRepeat rep: CompileRepeat(rep); break;
-                case IRFor f: CompileFor(f); break;
+                case IrConst c: CompileConst(c); break;
+                case IrBinary b: CompileBinary(b); break;
+                case IrUnary u: CompileUnary(u); break;
+                case IrVar v: CompileVar(v); break;
+                case IrLet l: CompileLet(l); break;
+                case IrPrint p: CompilePrint(p); break;
+                case IrInput i: CompileInput(i); break;
+                case IrBlock b: foreach (var stmt in b.Statements) CompileNode(stmt); break;
+                case IrIf iff: CompileIf(iff); break;
+                case IrWhile wh: CompileWhile(wh); break;
+                case IrRepeat rep: CompileRepeat(rep); break;
+                case IrFor f: CompileFor(f); break;
                 default: throw new NotImplementedException($"Not implemented: {node.GetType().Name}");
             }
         }
 
-        private void CompileConst(IRConst c)
+        private void CompileConst(IrConst c)
         {
             switch (c.Type)
             {
@@ -73,7 +69,7 @@ namespace VM.Core
             }
         }
 
-        private void CompileBinary(IRBinary bin)
+        private void CompileBinary(IrBinary bin)
     {
     CompileNode(bin.Left);
     CompileNode(bin.Right);
@@ -134,7 +130,7 @@ namespace VM.Core
             throw new Exception($"Unknown binary operator: {bin.Op}");
     }
     }
-        private void CompileUnary(IRUnary u)
+        private void CompileUnary(IrUnary u)
         {
             CompileNode(u.Operand);
             _bytecode.Add(u.Op switch
@@ -145,14 +141,14 @@ namespace VM.Core
             });
         }
 
-        private void CompileVar(IRVar v)
+        private void CompileVar(IrVar v)
         {
             var index = GetLocalIndex(v.Name);
             _bytecode.Add((byte)OpCode.LOAD);
             _bytecode.AddRange(BitConverter.GetBytes(index));
         }
 
-        private void CompileLet(IRLet l)
+        private void CompileLet(IrLet l)
         {
             CompileNode(l.Expr);
             var index = GetOrCreateLocalIndex(l.Name);
@@ -160,7 +156,7 @@ namespace VM.Core
             _bytecode.AddRange(BitConverter.GetBytes(index));
         }
 
-        private void CompileInput(IRInput input)
+        private void CompileInput(IrInput input)
         {
             foreach (var name in input.VarNames)
             {
@@ -171,13 +167,13 @@ namespace VM.Core
             }
         }
 
-        private void CompilePrint(IRPrint p)
+        private void CompilePrint(IrPrint p)
         {
             CompileNode(p.Expr);
             _bytecode.Add((byte)OpCode.PRINT);
         }
 
-        private void CompileIf(IRIf iff)
+        private void CompileIf(IrIf iff)
         {
             CompileNode(iff.Condition);
             var elseLabel = NewLabel("else");
@@ -200,7 +196,7 @@ namespace VM.Core
             PlaceLabel(endLabel);
         }
 
-        private void CompileWhile(IRWhile w)
+        private void CompileWhile(IrWhile w)
         {
             var start = NewLabel("while_start");
             var end = NewLabel("while_end");
@@ -218,7 +214,7 @@ namespace VM.Core
             PlaceLabel(end);
         }
 
-        private void CompileRepeat(IRRepeat r)
+        private void CompileRepeat(IrRepeat r)
         {
             var start = NewLabel("repeat_start");
 
@@ -231,7 +227,7 @@ namespace VM.Core
             AddFixup(start); // repeat until → пока false → jump back
         }
 
-        private void CompileFor(IRFor f)
+        private void CompileFor(IrFor f)
         {
             var start = NewLabel("for_start");
             var end = NewLabel("for_end");
@@ -280,14 +276,14 @@ namespace VM.Core
         // --- Helpers ---
         private int GetOrCreateLocalIndex(string name)
         {
-            if (!_locals.TryGetValue(name, out int index))
+            if (!_locals.TryGetValue(name, out var index))
                 _locals[name] = index = _varCounter++;
             return index;
         }
 
         private int GetLocalIndex(string name)
         {
-            if (!_locals.TryGetValue(name, out int index))
+            if (!_locals.TryGetValue(name, out var index))
                 throw new Exception($"Undefined variable: {name}");
             return index;
         }
@@ -310,7 +306,7 @@ namespace VM.Core
         {
             foreach (var (pos, label) in _fixups)
             {
-                if (!_labels.TryGetValue(label, out int target))
+                if (!_labels.TryGetValue(label, out var target))
                     throw new Exception($"Unresolved label: {label}");
 
                 var offset = (short)(target - (pos + 2));

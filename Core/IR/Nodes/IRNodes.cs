@@ -1,127 +1,127 @@
 ﻿namespace VM.Core.IR.Nodes
 {
-    public abstract class IRNode
+    public abstract class IrNode
     {
         public int Line { get; init; }
     }
 
-    public class IRConst : IRNode
+    public class IrConst : IrNode
     {
         public object Value;
-        public string Type; // "int", "float", "string", "bool"
+        public string? Type; // "int", "float", "string", "bool"
     }
 
-    public class IRVar : IRNode
+    public class IrVar : IrNode
     {
-        public string Name;
+        public string? Name;
     }
 
-    public class IRLet : IRNode
+    public class IrLet : IrNode
     {
-        public string Name;
-        public IRNode Expr;
+        public string? Name;
+        public required IrNode? Expr;
     }
 
-    public class IRPrint : IRNode
+    public class IrPrint : IrNode
     {
-        public IRNode Expr;
+        public required IrNode? Expr;
     }
 
-    public class IRBinary : IRNode
+    public class IrBinary : IrNode
     {
-        public string Op;
-        public IRNode Left;
-        public IRNode Right;
+        public required string Op;
+        public required IrNode? Left;
+        public required IrNode? Right;
     }
 
-    public class IRUnary : IRNode
+    public class IrUnary : IrNode
     {
-        public string Op;
-        public IRNode Operand;
+        public required string Op;
+        public required IrNode? Operand;
     }
 
-    public class IRCall : IRNode
+    public class IrCall : IrNode
     {
-        public string Name;
-        public List<IRNode> Args = [];
+        public required string Name;
+        public List<IrNode> Args = [];
     }
 
-    public class IRBlock : IRNode
+    public class IrBlock : IrNode
     {
-        public List<IRNode> Statements = [];
+        public readonly List<IrNode?> Statements = [];
     }
 
-    public class IRIf : IRNode
+    public class IrIf : IrNode
     {
-        public IRNode Condition;
-        public List<IRNode> ThenBlock = [];
-        public List<IRNode>? ElseBlock;
+        public IrNode? Condition;
+        public List<IrNode?> ThenBlock = [];
+        public List<IrNode>? ElseBlock;
     }
 
-    public class IRWhile : IRNode
+    public class IrWhile : IrNode
     {
-        public IRNode Condition;
-        public List<IRNode> Body = [];
+        public IrNode? Condition;
+        public List<IrNode?> Body = [];
     }
 
-    public class IRRepeat : IRNode
+    public class IrRepeat : IrNode
     {
-        public List<IRNode> Body = [];
-        public IRNode Condition;
+        public List<IrNode?> Body = [];
+        public IrNode? Condition;
     }
 
-    public class IRFor : IRNode
+    public class IrFor : IrNode
     {
         public string VarName;
-        public IRNode From;
-        public IRNode To;
-        public IRNode? Step;
-        public List<IRNode> Body = [];
+        public IrNode? From;
+        public IrNode? To;
+        public IrNode? Step;
+        public List<IrNode?> Body = [];
     }
 
-    public class IRInput : IRNode
+    public class IrInput : IrNode
     {
-        public List<string> VarNames = [];
+        public List<string?> VarNames = [];
     }
 
-    public class IRGoto : IRNode
+    public class IrGoto : IrNode
     {
-        public string Label;
+        public required string Label;
     }
 
-    public class IRLabel : IRNode
+    public class IrLabel : IrNode
     {
-        public string Name;
+        public required string Name;
     }
 
-    public class IRReturn : IRNode
+    public class IrReturn : IrNode
     {
-        public IRNode? Expr;
+        public IrNode? Expr;
     }
 
-    public class IRFunctionDecl : IRNode
+    public class IrFunctionDecl : IrNode
     {
-        public string Name;
+        public required string Name;
         public List<string> Args = [];
-        public List<IRNode> Body = [];
+        public List<IrNode> Body = [];
         public string ReturnType = "any";
     }
 
-    public class IRNewArray : IRNode
+    public class IrNewArray : IrNode
     {
-        public IRNode Size;
-        public string ElementType;
+        public required IrNode Size;
+        public required string ElementType;
     }
 
-    public class IRStructInit : IRNode
+    public class IrStructInit : IrNode
     {
-        public string TypeName;
-        public Dictionary<string, IRNode> Fields = new();
+        public required string TypeName;
+        public Dictionary<string, IrNode> Fields = new();
     }
 
-    public class IRFieldAccess : IRNode
+    public class IrFieldAccess : IrNode
     {
-        public IRNode Target;
-        public string FieldName;
+        public required IrNode Target;
+        public required string FieldName;
     }
 }
