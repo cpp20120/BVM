@@ -80,8 +80,9 @@ var irCompiler = new IrToBytecodeCompiler();
 var bytecode = irCompiler.Compile(ir);
 
 Console.WriteLine("\n=== BYTECODE (hex) ===");
-for (int i = 0; i < bytecode.Length; i++)
-    Console.Write($"{bytecode[i]:X2} ");
+foreach (var t in bytecode)
+    Console.Write($"{t:X2} ");
+
 Console.WriteLine();
 
 // === VM EXECUTION ===
@@ -116,7 +117,7 @@ var instructions = new Dictionary<OpCode, Instruction>
     { OpCode.PUSH, new PushInstruction() },
     { OpCode.PUSHS, new PushStringInstruction() },
     { OpCode.HALT, new HaltInstruction() },
-    {OpCode.OR, new OrInstruction()},
+    { OpCode.OR, new OrInstruction() },
     { OpCode.AND, new AndInstruction() }
 };
 
@@ -125,7 +126,7 @@ try
 {
     while (true)
     {
-        OpCode op = (OpCode)context.ReadByte();
+        var op = (OpCode)context.ReadByte();
         if (!instructions.TryGetValue(op, out var instr))
             throw new Exception($"Unknown opcode: {op}");
 

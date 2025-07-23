@@ -61,8 +61,8 @@ namespace VM.Core
                     break;
 
                 case "string":
-                    string str = (string)c.Value;
-                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(str);
+                    var str = (string)c.Value;
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(str);
                     _bytecode.Add((byte)OpCode.PUSHS);
                     _bytecode.AddRange(BitConverter.GetBytes(bytes.Length));
                     _bytecode.AddRange(bytes);
@@ -147,7 +147,7 @@ namespace VM.Core
 
         private void CompileVar(IRVar v)
         {
-            int index = GetLocalIndex(v.Name);
+            var index = GetLocalIndex(v.Name);
             _bytecode.Add((byte)OpCode.LOAD);
             _bytecode.AddRange(BitConverter.GetBytes(index));
         }
@@ -155,7 +155,7 @@ namespace VM.Core
         private void CompileLet(IRLet l)
         {
             CompileNode(l.Expr);
-            int index = GetOrCreateLocalIndex(l.Name);
+            var index = GetOrCreateLocalIndex(l.Name);
             _bytecode.Add((byte)OpCode.STORE);
             _bytecode.AddRange(BitConverter.GetBytes(index));
         }
@@ -165,7 +165,7 @@ namespace VM.Core
             foreach (var name in input.VarNames)
             {
                 _bytecode.Add((byte)OpCode.INPUT);
-                int index = GetOrCreateLocalIndex(name);
+                var index = GetOrCreateLocalIndex(name);
                 _bytecode.Add((byte)OpCode.STORE);
                 _bytecode.AddRange(BitConverter.GetBytes(index));
             }
@@ -180,8 +180,8 @@ namespace VM.Core
         private void CompileIf(IRIf iff)
         {
             CompileNode(iff.Condition);
-            string elseLabel = NewLabel("else");
-            string endLabel = NewLabel("endif");
+            var elseLabel = NewLabel("else");
+            var endLabel = NewLabel("endif");
 
             _bytecode.Add((byte)OpCode.JZ);
             AddFixup(elseLabel);
@@ -220,7 +220,7 @@ namespace VM.Core
 
         private void CompileRepeat(IRRepeat r)
         {
-            string start = NewLabel("repeat_start");
+            var start = NewLabel("repeat_start");
 
             PlaceLabel(start);
             foreach (var stmt in r.Body)
@@ -233,10 +233,10 @@ namespace VM.Core
 
         private void CompileFor(IRFor f)
         {
-            string start = NewLabel("for_start");
-            string end = NewLabel("for_end");
+            var start = NewLabel("for_start");
+            var end = NewLabel("for_end");
 
-            int index = GetOrCreateLocalIndex(f.VarName);
+            var index = GetOrCreateLocalIndex(f.VarName);
 
             CompileNode(f.From);
             _bytecode.Add((byte)OpCode.STORE);
@@ -301,7 +301,7 @@ namespace VM.Core
 
         private void AddFixup(string label)
         {
-            int pos = _bytecode.Count;
+            var pos = _bytecode.Count;
             _fixups.Add((pos, label));
             _bytecode.AddRange(new byte[2]); // placeholder for short offset
         }
@@ -313,8 +313,8 @@ namespace VM.Core
                 if (!_labels.TryGetValue(label, out int target))
                     throw new Exception($"Unresolved label: {label}");
 
-                short offset = (short)(target - (pos + 2));
-                byte[] bytes = BitConverter.GetBytes(offset);
+                var offset = (short)(target - (pos + 2));
+                var bytes = BitConverter.GetBytes(offset);
                 _bytecode[pos] = bytes[0];
                 _bytecode[pos + 1] = bytes[1];
             }

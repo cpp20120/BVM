@@ -301,17 +301,14 @@ namespace VM.Parser
 
         private ExprNode ParseUnaryExpr()
         {
-            if (Match(TokenType.SUB, TokenType.NOT))
+            if (!Match(TokenType.SUB, TokenType.NOT)) return ParsePrimaryExpr();
+            var opToken = tokens[_position - 1];
+            return new UnaryExpr
             {
-                var opToken = tokens[_position - 1];
-                return new UnaryExpr
-                {
-                    Operator = opToken.Type,
-                    Operand = ParseUnaryExpr(),
-                    Line = opToken.Line
-                };
-            }
-            return ParsePrimaryExpr();
+                Operator = opToken.Type,
+                Operand = ParseUnaryExpr(),
+                Line = opToken.Line
+            };
         }
 
         private ExprNode ParsePrimaryExpr()
