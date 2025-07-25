@@ -69,6 +69,7 @@ WEND
             vm.DumpState();
             vm.Run();
             vm.DumpState();
+            
         }
     }
 }

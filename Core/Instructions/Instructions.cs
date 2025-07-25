@@ -72,12 +72,12 @@ namespace VM.Core.Instructions
         public int OperandSize { get; } = operandSize;
         public string StackEffect { get; } = stackEffect;
 
-        public abstract void Execute(ExContext context);
+        public abstract void Execute(ExContext context, FrameStack frames);
     }
 
     public class PushInstruction() : Instruction(OpCode.PUSH, "PUSH", sizeof(int), "→ value")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var value = context.ReadInt();
             context.DataStack.Push(VmValue.FromInt(value));
@@ -86,7 +86,7 @@ namespace VM.Core.Instructions
 
     public class PrintInstruction() : Instruction(OpCode.PRINT, "PRINT", 0, "value →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var value = context.DataStack.Pop();
             string output = value.Type switch
@@ -105,7 +105,7 @@ namespace VM.Core.Instructions
 
     public class PopInstruction() : Instruction(OpCode.POP, "POP", 0, "value →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             context.DataStack.Pop();
         }
@@ -113,7 +113,7 @@ namespace VM.Core.Instructions
 
     public class DupInstruction() : Instruction(OpCode.DUP, "DUP", 0, "a → a a")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var value = context.DataStack.Peek();
             context.DataStack.Push(value);
@@ -122,7 +122,7 @@ namespace VM.Core.Instructions
 
     public class SwapInstruction() : Instruction(OpCode.SWAP, "SWAP", 0, "a b → b a")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -133,7 +133,7 @@ namespace VM.Core.Instructions
 
     public class OverInstruction() : Instruction(OpCode.OVER, "OVER", 0, "a b → a b a")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -145,7 +145,7 @@ namespace VM.Core.Instructions
 
     public class MulInstruction() : Instruction(OpCode.MUL, "MUL", 0, "a b → (a*b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -161,7 +161,7 @@ namespace VM.Core.Instructions
 
     public class DivInstruction() : Instruction(OpCode.DIV, "DIV", 0, "a b → (a/b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -177,7 +177,7 @@ namespace VM.Core.Instructions
 
     public class ModInstruction() : Instruction(OpCode.MOD, "MOD", 0, "a b → (a%b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -191,7 +191,7 @@ namespace VM.Core.Instructions
 
     public class NegInstruction() : Instruction(OpCode.NEG, "NEG", 0, "a → (-a)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var a = context.DataStack.Pop();
 
@@ -206,7 +206,7 @@ namespace VM.Core.Instructions
 
     public class NotInstruction() : Instruction(OpCode.NOT, "NOT", 0, "a → !a")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var a = context.DataStack.Pop();
 
@@ -219,7 +219,7 @@ namespace VM.Core.Instructions
 
     public class CmpInstruction() : Instruction(OpCode.CMP, "CMP", 0, "a b → (a<=>b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -238,7 +238,7 @@ namespace VM.Core.Instructions
 
     public class HaltInstruction() : Instruction(OpCode.HALT, "HALT", 0, "→")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             throw new VmHaltException();
         }
@@ -251,28 +251,43 @@ namespace VM.Core.Instructions
 
     public class RetInstruction() : Instruction(OpCode.RET, "RET", 0, "ret_addr →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
-            if (context.CallStack.IsEmpty)
-                throw new VmException("Call stack is empty, cannot return");
+            if (frames.Count == 0)
+                throw new VmException("Frame stack is empty, cannot return");
 
-            context.InstructionPointer = context.CallStack.Pop();
+            var frame = frames.Pop();
+            context.InstructionPointer = frame.ReturnAddress;
         }
     }
 
+
     public class CallInstruction() : Instruction(OpCode.CALL, "CALL", sizeof(int), "→ ret_addr")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var targetAddr = context.ReadInt();
-            context.CallStack.Push(context.InstructionPointer);
+            
+            var argCount = context.DataStack.Pop().AsInt();
+
+            var newFrame = new Frame
+            {
+                ReturnAddress = context.InstructionPointer,
+                ArgumentCount = argCount
+            };
+
+            for (int i = argCount - 1; i >= 0; i--)
+                newFrame.Locals[i] = context.DataStack.Pop();
+
+            frames.Push(newFrame);
             context.InstructionPointer = targetAddr;
         }
     }
 
+
     public class JnzInstruction() : Instruction(OpCode.JNZ, "JNZ", sizeof(short), "cond →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var offset = context.ReadShort();
             var condition = context.DataStack.Pop();
@@ -291,7 +306,7 @@ namespace VM.Core.Instructions
 
     public class AddInstruction() : Instruction(OpCode.ADD, "ADD", 0, "a b → (a+b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -307,7 +322,7 @@ namespace VM.Core.Instructions
 
     public class SubInstruction() : Instruction(OpCode.SUB, "SUB", 0, "a b → (a-b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -323,7 +338,7 @@ namespace VM.Core.Instructions
 
     public class EqInstruction() : Instruction(OpCode.EQ, "EQ", 0, "a b → (a==b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -333,7 +348,7 @@ namespace VM.Core.Instructions
 
     public class NeqInstruction() : Instruction(OpCode.NEQ, "NEQ", 0, "a b → (a!=b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -343,26 +358,32 @@ namespace VM.Core.Instructions
 
     public class LoadInstruction() : Instruction(OpCode.LOAD, "LOAD", sizeof(int), "→ value")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var index = context.ReadInt();
-            context.DataStack.Push(context.LocalVariables[index]);
+            var frame = frames.Peek();
+            
+            if (!frame.Locals.TryGetValue(index, out var val))
+                throw new VmException($"LLOAD: локальной переменной с индексом {index} нет");
+            context.DataStack.Push(val);
         }
     }
 
     public class StoreInstruction() : Instruction(OpCode.STORE, "STORE", sizeof(int), "value →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var index = context.ReadInt();
             var value = context.DataStack.Pop();
+            var frame = frames.Peek();
+            frame.Locals[index] = value;
             context.LocalVariables[index] = value;
         }
     }
 
     public class JmpInstruction() : Instruction(OpCode.JMP, "JMP", sizeof(short), "→")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var offset = context.ReadShort();
             context.InstructionPointer += offset;
@@ -371,7 +392,7 @@ namespace VM.Core.Instructions
 
     public class JzInstruction() : Instruction(OpCode.JZ, "JZ", sizeof(short), "cond →")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var offset = context.ReadShort();
             var condition = context.DataStack.Pop();
@@ -390,7 +411,7 @@ namespace VM.Core.Instructions
 
     public class InputInstruction() : Instruction(OpCode.INPUT, "INPUT", 0, "→ value")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             Console.Write("INPUT > ");
             var line = Console.ReadLine();
@@ -403,7 +424,7 @@ namespace VM.Core.Instructions
 
     public class PushStringInstruction() : Instruction(OpCode.PUSHS, "PUSHS", -1, "→ value")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var len = context.ReadInt();
             var bytes = context.ReadBytes(len);
@@ -414,7 +435,7 @@ namespace VM.Core.Instructions
 
     public class OrInstruction() : Instruction(OpCode.OR, "OR", 0, "a b → (a || b)")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -428,7 +449,7 @@ namespace VM.Core.Instructions
 
     public class AndInstruction() : Instruction(OpCode.AND, "AND", 2, "a, b → a AND b")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var b = context.DataStack.Pop();
             var a = context.DataStack.Pop();
@@ -437,7 +458,7 @@ namespace VM.Core.Instructions
             context.DataStack.Push(VmValue.FromBool(result));
         }
     }
-
+    
     public class VmArray
     {
         private readonly VmValue[] _elements;
@@ -484,7 +505,7 @@ namespace VM.Core.Instructions
 
     public class NewArrayInstruction() : Instruction(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var size = context.DataStack.Pop().AsInt();
             if (size < 0)
@@ -496,7 +517,7 @@ namespace VM.Core.Instructions
 
     public class GetIndexInstruction() : Instruction(OpCode.GETINDEX, "GETINDEX", 0, "array index → value")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var index = context.DataStack.Pop().AsInt();
             var array = context.DataStack.Pop().AsArray();
@@ -507,13 +528,12 @@ namespace VM.Core.Instructions
 
     public class SetIndexInstruction() : Instruction(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array")
     {
-        public override void Execute(ExContext context)
+        public override void Execute(ExContext context, FrameStack frames)
         {
             var value = context.DataStack.Pop();
             var index = context.DataStack.Pop().AsInt();
             var array = context.DataStack.Pop().AsArray();
             array.Set(index, value);
-            context.DataStack.Push(VmValue.FromArray(array));
         }
     }
 }

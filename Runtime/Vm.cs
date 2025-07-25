@@ -4,122 +4,80 @@ using VM.Core.Instructions;
 
 namespace VM.Core
 {
-    public class VirtualMachine
-    {
-        private readonly Dictionary<OpCode, Instruction> _instructions;
-        private readonly ExContext _context;
-
-        public VirtualMachine()
+        public class VirtualMachine
         {
-            _context = new ExContext();
-            _instructions = new Dictionary<OpCode, Instruction>
+            private readonly ExContext _context;
+            private readonly InstructionSet _instructionSet;
+            private readonly FrameStack _frames;
+
+            public VirtualMachine()
             {
-                // Stack instructions
-                { OpCode.PUSH, new PushInstruction() },
-                { OpCode.POP, new PopInstruction() },
-                { OpCode.DUP, new DupInstruction() },
-                { OpCode.SWAP, new SwapInstruction() },
-                { OpCode.OVER, new OverInstruction() },
+                _context = new ExContext();
+                _instructionSet = new InstructionSet();
+                _frames = new FrameStack();
+            }
 
-                // Arithmetic instructions
-                { OpCode.ADD, new AddInstruction() },
-                { OpCode.SUB, new SubInstruction() },
-                { OpCode.MUL, new MulInstruction() },
-                { OpCode.DIV, new DivInstruction() },
-                { OpCode.MOD, new ModInstruction() },
-                { OpCode.NEG, new NegInstruction() },
-
-                // Logical instructions
-                { OpCode.AND, new AndInstruction() },
-                { OpCode.OR, new OrInstruction() },
-                { OpCode.NOT, new NotInstruction() },
-                { OpCode.CMP, new CmpInstruction() },
-                { OpCode.EQ, new EqInstruction() },
-                { OpCode.NEQ, new NeqInstruction() },
-
-                // Variables
-                { OpCode.LOAD, new LoadInstruction() },
-                { OpCode.STORE, new StoreInstruction() },
-
-                // Conditional
-                { OpCode.JMP, new JmpInstruction() },
-                { OpCode.JZ, new JzInstruction() },
-                { OpCode.JNZ, new JnzInstruction() },
-                { OpCode.CALL, new CallInstruction() },
-                { OpCode.RET, new RetInstruction() },
-
-                // IO
-                { OpCode.PRINT, new PrintInstruction() },
-                { OpCode.INPUT, new InputInstruction() },
-                { OpCode.HALT, new HaltInstruction() },
-
-                // Strings
-                { OpCode.PUSHS, new PushStringInstruction() },
-
-                // Arrays
-                { OpCode.NEWARRAY, new NewArrayInstruction() },
-                { OpCode.GETINDEX, new GetIndexInstruction() },
-                { OpCode.SETINDEX, new SetIndexInstruction() },
-            };
-        }
-
-        public void LoadProgram(byte[] bytecode)
-        {
-            _context.LoadCode(bytecode);
-        }
-
-        public void Run()
-        {
-            try
+            public void LoadProgram(byte[] bytecode)
             {
-                while (true)
+                _context.LoadCode(bytecode);
+                _frames.Push(new Frame { ReturnAddress = -1 });
+            }
+
+            public void Run()
+            {
+                try
                 {
-                    var ipBefore = _context.InstructionPointer;
+                    while (true)
+                    {
+                        var ipBefore = _context.InstructionPointer;
+                        var opcode = (OpCode)_context.ReadByte();
+                        var instr = _instructionSet.GetInstruction(opcode);
 
-                    var opcode = (OpCode)_context.ReadByte();
+                        if (instr == null)
+                            throw new VmException($"Неизвестный опкод: 0x{opcode:X2}", ip: ipBefore);
 
-                    if (!_instructions.TryGetValue(opcode, out var instr))
-                        throw new VmException($"Неизвестный опкод: 0x{opcode:X2}", ip: ipBefore);
-
-                    instr.Execute(_context);
+                        instr.Execute(_context, _frames);
+                    }
+                }
+                catch (VmException ex)
+                {
+                    Console.WriteLine($"[VM Error] {ex.Message} (Line: {ex.LineNumber}, IP: {ex.InstructionPointer})");
+                }
+                catch (VmHaltException)
+                {
+                    Console.WriteLine("VM finished.");
                 }
             }
-            catch (VmException ex)
-            {
-                Console.WriteLine($"[VM Error] {ex.Message} (Line: {ex.LineNumber}, IP: {ex.InstructionPointer})");
-            }
-            catch (VmHaltException)
-            {
-                Console.WriteLine("VM finished.");
-            }
-        } 
 
-        public void Reset()
-        {
-            _context.DataStack.Clear();
-            _context.CallStack.Clear();
-            _context.LocalVariables.Clear();
-            _context.InstructionPointer = 0;
-        }
-
-        public void DumpState()
-        {
-            Console.WriteLine("=== VM STATE ===");
-            Console.WriteLine($"Bytecode: {_context.DataStack.Count}");
-            Console.WriteLine($"IP: {_context.InstructionPointer}");
-            Console.WriteLine($"Stack: {_context.DataStack}");
-            Console.WriteLine($"CallStack: {_context.CallStack}");
-            Console.WriteLine("=== BYTECODE DUMP ===");
-            var code = _context.Bytecode;
-            for (int i = 0; i < code.Length; i++)
+            public void Reset()
             {
-                if (i % 16 == 0)
-                    Console.Write($"{i:X4}: ");
-                Console.Write($"{code[i]:X2} ");
-                if (i % 16 == 15 || i == code.Length - 1)
-                    Console.WriteLine();
+                _context.DataStack.Clear();
+                _context.CallStack.Clear();
+                _context.LocalVariables.Clear();
+                _context.InstructionPointer = 0;
+                _frames.Clear();
             }
 
+           
+            public void DumpState()
+            {
+                Console.WriteLine("=== VM STATE ===");
+                Console.WriteLine($"Bytecode: {_context.DataStack.Count}");
+                Console.WriteLine($"IP: {_context.InstructionPointer}");
+                Console.WriteLine($"Stack: {_context.DataStack}");
+                Console.WriteLine($"CallStack: {_context.CallStack}");
+                Console.WriteLine("=== FRAMES ===");
+                _frames.Dump();
+                Console.WriteLine("=== BYTECODE DUMP ===");
+                var code = _context.Bytecode;
+                for (int i = 0; i < code.Length; i++)
+                {
+                    if (i % 16 == 0)
+                        Console.Write($"{i:X4}: ");
+                    Console.Write($"{code[i]:X2} ");
+                    if (i % 16 == 15 || i == code.Length - 1)
+                        Console.WriteLine();
+                }
+            }
         }
     }
-}
