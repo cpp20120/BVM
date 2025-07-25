@@ -2,7 +2,7 @@
 
 public class StringValue(string value) : IValue
 {
-    public string Value { get; } = value;
+    private string Value { get; } = value;
 
     public string TypeName => "string";
     public object Raw => Value;

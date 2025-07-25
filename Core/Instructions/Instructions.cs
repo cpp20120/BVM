@@ -482,12 +482,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class NewArrayInstruction : Instruction
+    public class NewArrayInstruction() : Instruction(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array")
     {
-        public NewArrayInstruction() : base(OpCode.NEWARRAY, "NEWARRAY", 0, "size → array")
-        {
-        }
-
         public override void Execute(ExContext context)
         {
             var size = context.DataStack.Pop().AsInt();
@@ -498,12 +494,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class GetIndexInstruction : Instruction
+    public class GetIndexInstruction() : Instruction(OpCode.GETINDEX, "GETINDEX", 0, "array index → value")
     {
-        public GetIndexInstruction() : base(OpCode.GETINDEX, "GETINDEX", 0, "array index → value")
-        {
-        }
-
         public override void Execute(ExContext context)
         {
             var index = context.DataStack.Pop().AsInt();
@@ -513,12 +505,8 @@ namespace VM.Core.Instructions
         }
     }
 
-    public class SetIndexInstruction : Instruction
+    public class SetIndexInstruction() : Instruction(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array")
     {
-        public SetIndexInstruction() : base(OpCode.SETINDEX, "SETINDEX", 0, "array index value → array")
-        {
-        }
-
         public override void Execute(ExContext context)
         {
             var value = context.DataStack.Pop();

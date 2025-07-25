@@ -45,7 +45,7 @@ namespace VM.Core.IR
                 case IrNewArray a: CompileNewArray(a); break;
                 case IrIndex i: CompileIndex(i); break;
                 case IrStoreIndex s: CompileStoreIndex(s); break;
-                default: throw new NotImplementedException($"Not implemented: {node.GetType().Name}");
+                default: throw new NotImplementedException($"Not implemented: {node?.GetType().Name}");
             }
         }
 

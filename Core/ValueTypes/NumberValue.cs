@@ -2,42 +2,42 @@
 
 public class NumberValue : IValue
 {
-    public enum NumberKind
+    private enum NumberKind
     {
-        Int,
-        Float
+        INT,
+        FLOAT
     }
 
-    public NumberKind Kind { get; }
-    public object Value { get; }
+    private NumberKind Kind { get; }
+    private object Value { get; }
 
     public NumberValue(int value)
     {
-        Kind = NumberKind.Int;
+        Kind = NumberKind.INT;
         Value = value;
     }
 
     public NumberValue(float value)
     {
-        Kind = NumberKind.Float;
+        Kind = NumberKind.FLOAT;
         Value = value;
     }
 
-    public string TypeName => Kind == NumberKind.Int ? "int" : "float";
+    public string TypeName => Kind == NumberKind.INT ? "int" : "float";
     public object Raw => Value;
 
     public int AsInt() =>
-        Kind == NumberKind.Int ? (int)Value : throw new InvalidCastException("Not an int");
+        Kind == NumberKind.INT ? (int)Value : throw new InvalidCastException("Not an int");
 
     public float AsFloat() =>
-        Kind == NumberKind.Float ? (float)Value : throw new InvalidCastException("Not a float");
+        Kind == NumberKind.FLOAT ? (float)Value : throw new InvalidCastException("Not a float");
 
     public string AsString() => Value.ToString();
 
     public bool AsBool() => Kind switch
     {
-        NumberKind.Int => (int)Value != 0,
-        NumberKind.Float => Math.Abs((float)Value) > float.Epsilon,
+        NumberKind.INT => (int)Value != 0,
+        NumberKind.FLOAT => Math.Abs((float)Value) > float.Epsilon,
         _ => false
     };
 

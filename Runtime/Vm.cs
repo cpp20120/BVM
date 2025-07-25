@@ -105,9 +105,21 @@ namespace VM.Core
         public void DumpState()
         {
             Console.WriteLine("=== VM STATE ===");
+            Console.WriteLine($"Bytecode: {_context.DataStack.Count}");
             Console.WriteLine($"IP: {_context.InstructionPointer}");
             Console.WriteLine($"Stack: {_context.DataStack}");
             Console.WriteLine($"CallStack: {_context.CallStack}");
+            Console.WriteLine("=== BYTECODE DUMP ===");
+            var code = _context.Bytecode;
+            for (int i = 0; i < code.Length; i++)
+            {
+                if (i % 16 == 0)
+                    Console.Write($"{i:X4}: ");
+                Console.Write($"{code[i]:X2} ");
+                if (i % 16 == 15 || i == code.Length - 1)
+                    Console.WriteLine();
+            }
+
         }
     }
 }

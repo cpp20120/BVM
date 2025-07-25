@@ -7,6 +7,8 @@ namespace VM.Core
         public DataStack DataStack { get; } = new();
         public CallStack CallStack { get; } = new();
         public Dictionary<int, VmValue> LocalVariables = new();
+        public byte[] Bytecode => _code;
+
 
 
         public int InstructionPointer { get; set; }

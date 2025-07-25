@@ -46,7 +46,7 @@
         public List<IrNode> Args = [];
     }
 
-    public class IrBlock : IrNode
+    public abstract class IrBlock : IrNode
     {
         public readonly List<IrNode?> Statements = [];
     }

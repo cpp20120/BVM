@@ -1,13 +1,8 @@
 ﻿namespace VM.Core.ValueTypes;
 
-public class BoolValue : IValue
+public class BoolValue(bool value) : IValue
 {
-    public bool Value { get; }
-
-    public BoolValue(bool value)
-    {
-        Value = value;
-    }
+    public bool Value { get; } = value;
 
     public string TypeName => "bool";
     public object Raw => Value;

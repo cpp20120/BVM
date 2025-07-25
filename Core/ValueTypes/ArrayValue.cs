@@ -50,7 +50,7 @@ public class ArrayValue : IValue
     {
         var sb = new StringBuilder();
         sb.Append('[');
-        for (int i = 0; i < _elements.Count; i++)
+        for (var i = 0; i < _elements.Count; i++)
         {
             if (i > 0) sb.Append(", ");
             sb.Append(_elements[i].ToString());
