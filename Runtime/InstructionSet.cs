@@ -55,7 +55,6 @@ namespace VM.Core
             _instructions[OpCode.GETINDEX] = new GetIndexInstruction();
             _instructions[OpCode.SETINDEX] = new SetIndexInstruction();
         }
-        
 
         public Instruction? GetInstruction(OpCode opcode) =>
             _instructions.TryGetValue(opcode, out var instr) ? instr : null;

@@ -257,7 +257,6 @@ namespace VM.Parser
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
 
-
     public class CustomCallExpr : ExprNode
     {
         public required string Name;
@@ -270,7 +269,7 @@ namespace VM.Parser
 
     public class NewArrayExpr : ExprNode
     {
-        public ExprNode Size { get; init; }
+        public required ExprNode Size { get; init; }
         public override string ToString() => $"ARRAY({Size})";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }

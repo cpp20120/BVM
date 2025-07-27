@@ -48,7 +48,6 @@ namespace VM.Core
                     Console.WriteLine("VM finished.");
                 }
             }
-
             public void Reset()
             {
                 _context.DataStack.Clear();
@@ -57,8 +56,7 @@ namespace VM.Core
                 _context.InstructionPointer = 0;
                 _frames.Clear();
             }
-
-           
+            
             public void DumpState()
             {
                 Console.WriteLine("=== VM STATE ===");

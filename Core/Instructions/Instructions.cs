@@ -248,7 +248,6 @@ namespace VM.Core.Instructions
     {
     }
 
-
     public class RetInstruction() : Instruction(OpCode.RET, "RET", 0, "ret_addr →")
     {
         public override void Execute(ExContext context, FrameStack frames)
