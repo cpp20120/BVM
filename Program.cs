@@ -59,7 +59,7 @@ WEND
             var ast = parser.ParseProgram();
 
             var astToIr = new AstToIrCompiler();
-            List<IrNode?> ir = ast.Accept(astToIr);
+            var ir = ast.Accept(astToIr);
 
             var irCompiler = new IrToBytecodeCompiler();
             var bytecode = irCompiler.Compile(ir);

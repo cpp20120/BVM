@@ -1,5 +1,10 @@
 namespace VM.Parser
 {
+    /// <summary>
+    /// Defines a visitor interface for traversing AST nodes.
+    /// Used to separate processing logic from the AST structure itself (Visitor pattern).
+    /// </summary>
+    /// <typeparam name="T">The return type of the visitor methods.</typeparam>
     public interface IAstVisitor<out T>
     {
         T Visit(ProgramNode node);
@@ -25,13 +30,31 @@ namespace VM.Parser
         T Visit(ExprNode node);
     }
 
+    /// <summary>
+    /// Base class for all AST nodes. Stores line number and provides an accept method for the visitor pattern.
+    /// </summary>
     public abstract class AstNode
     {
+        /// <summary>
+        /// The line number in the source code where this node appears.
+        /// </summary>
         public int Line { get; init; }
+
+        /// <summary>
+        /// Returns a string representation of the AST node for debugging.
+        /// </summary>
         public abstract override string ToString();
+
+        /// <summary>
+        /// Accepts a visitor that returns a value.
+        /// </summary>
         public abstract T Accept<T>(IAstVisitor<T> visitor);
     }
 
+    /// <summary>
+    /// Root node of the AST representing the entire program.
+    /// Contains a sequence of top-level statements.
+    /// </summary>
     public class ProgramNode : AstNode
     {
         public readonly List<StatementNode> Statements = [];
@@ -41,11 +64,15 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Base class for all statements (i.e., code that performs actions).
+    /// </summary>
     public abstract class StatementNode : AstNode
     {
     }
-
+    /// <summary>
+    /// Statement representing a PRINT operation, which outputs expressions to the console.
+    /// </summary>
     public class PrintStmt : StatementNode
     {
         public readonly List<ExprNode> Expressions = [];
@@ -57,7 +84,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing a LET assignment to a variable.
+    /// </summary>
     public class LetStmt : StatementNode
     {
         public string? Id;
@@ -66,7 +95,9 @@ namespace VM.Parser
         public override string ToString() => $"LET {Id} = {Expression}";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing a conditional IF block with optional ELSE branch.
+    /// </summary>
     public class IfStmt : StatementNode
     {
         public required ExprNode Condition;
@@ -85,7 +116,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing a WHILE loop.
+    /// </summary>
     public class WhileStmt : StatementNode
     {
         public ExprNode? Condition;
@@ -99,7 +132,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing a REPEAT-UNTIL loop.
+    /// </summary>
     public class RepeatStmt : StatementNode
     {
         public ExprNode? Condition;
@@ -113,7 +148,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing a FOR loop with optional STEP.
+    /// </summary>
     public class ForStmt : StatementNode
     {
         public required string Variable;
@@ -131,30 +168,40 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement for accepting input into one or more variables.
+    /// </summary>
     public class InputStmt : StatementNode
     {
         public readonly List<string> Ids = [];
         public override string ToString() => $"INPUT {string.Join(", ", Ids)}";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement that causes loop control to jump to the next iteration.
+    /// </summary>
     public class ContinueStmt : StatementNode
     {
         public override string ToString() => "CONTINUE";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement that causes an immediate exit from the current loop or program.
+    /// </summary>
     public class ExitStmt : StatementNode
     {
         public override string ToString() => "EXIT";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Base class for all expressions (i.e., values, operators, function calls).
+    /// </summary>
     public abstract class ExprNode : AstNode
     {
     }
-
+    /// <summary>
+    /// Expression representing a binary operation (e.g., a + b).
+    /// </summary>
     public class BinaryExpr : ExprNode
     {
         public ExprNode? Left;
@@ -185,7 +232,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a unary operation (e.g., -a or NOT a).
+    /// </summary>
     public class UnaryExpr : ExprNode
     {
         public TokenType Operator;
@@ -204,28 +253,36 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a numeric literal.
+    /// </summary>
     public class NumberExpr : ExprNode
     {
         public required string Value;
         public override string ToString() => Value;
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a string literal.
+    /// </summary>
     public class StringExpr : ExprNode
     {
         public required string Value;
         public override string ToString() => $"\"{Value}\"";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a reference to a variable.
+    /// </summary>
     public class VarExpr : ExprNode
     {
         public required string Name;
         public override string ToString() => Name;
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a built-in function call.
+    /// </summary>
     public class FuncCallExpr : ExprNode
     {
         public required TokenType Func;
@@ -236,7 +293,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing an index access on an array (e.g., a[5]).
+    /// </summary>
     public class IndexExpr : ExprNode
     {
         public required ExprNode Target;
@@ -246,7 +305,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Statement representing assignment to an array element by index.
+    /// </summary>
     public class AssignIndexStmt : StatementNode
     {
         public required string Target;
@@ -256,7 +317,9 @@ namespace VM.Parser
         public override string ToString() => $"LET {Target}[{Index}] = {Value}";
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing a custom user-defined function call.
+    /// </summary>
     public class CustomCallExpr : ExprNode
     {
         public required string Name;
@@ -266,7 +329,9 @@ namespace VM.Parser
 
         public override T Accept<T>(IAstVisitor<T> visitor) => visitor.Visit(this);
     }
-
+    /// <summary>
+    /// Expression representing array creation using ARRAY(n) syntax.
+    /// </summary>
     public class NewArrayExpr : ExprNode
     {
         public required ExprNode Size { get; init; }

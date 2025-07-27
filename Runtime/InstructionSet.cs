@@ -2,10 +2,17 @@
 
 namespace VM.Core
 {
+    /// <summary>
+    /// Maintains a mapping from operation codes (opcodes) to their corresponding executable instruction implementations.
+    /// Acts as a registry and dispatcher for instruction behavior in the virtual machine.
+    /// </summary>
     public class InstructionSet
     {
         private readonly Dictionary<OpCode, Instruction> _instructions = new();
-
+        /// <summary>
+        /// Initializes the instruction set with default core VM instructions.
+        /// Categorized by purpose: stack manipulation, arithmetic, logic, control flow, variables, arrays, I/O, and string operations.
+        /// </summary>
         public InstructionSet()
         {
             // Stack
@@ -55,7 +62,12 @@ namespace VM.Core
             _instructions[OpCode.GETINDEX] = new GetIndexInstruction();
             _instructions[OpCode.SETINDEX] = new SetIndexInstruction();
         }
-
+        /// <summary>
+        /// Retrieves the instruction implementation corresponding to the given opcode.
+        /// Returns null if the opcode is not defined in this set.
+        /// </summary>
+        /// <param name="opcode">The operation code to look up.</param>
+        /// <returns>The associated <see cref="Instruction"/> or null if not found.</returns>
         public Instruction? GetInstruction(OpCode opcode) =>
             _instructions.TryGetValue(opcode, out var instr) ? instr : null;
     }

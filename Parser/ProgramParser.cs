@@ -1,19 +1,30 @@
 namespace VM.Parser
 {
+    /// <summary>
+    /// Exception thrown when a syntax error occurs during parsing
+    /// </summary>
+    /// <param name="line"></param>
+    /// <param name="message"></param>
     public class ParseException(int line, string message) : Exception($"Line {line}: {message}")
     {
         public int Line { get; } = line;
     }
-
+    /// <summary>
+    /// Handwritten top-down LL(1) parser with operator precedence support
+    /// for a BASIC-like language.
+    /// </summary>
+    /// <param name="tokens"></param>
     public partial class ProgramParser(List<Token> tokens)
     {
         private int _position;
-
+        /// <summary>Reads the next token without advancing the cursor.</summary>
         private Token Peek(int offset = 0) =>
             _position + offset < tokens.Count ? tokens[_position + offset] : tokens[^1];
 
+        /// <summary>Advances the cursor and returns the next token.</summary>
         private Token Next() => tokens[_position++];
 
+        /// <summary>Checks if the current token matches any of the given types and advances if it does.</summary>
         private bool Match(params TokenType[] types)
         {
             if (!types.Contains(Peek().Type)) return false;
@@ -21,6 +32,7 @@ namespace VM.Parser
             return true;
         }
 
+        /// <summary>Expects the given token type or throws a ParseException.</summary>
         private void Expect(TokenType type)
         {
             if (Match(type)) return;
@@ -29,12 +41,14 @@ namespace VM.Parser
                 $"Expected {type} but found {next.Type} '{next.Text}'");
         }
 
+        /// <summary>Skips all newline tokens.</summary>
         private void SkipNewlines()
         {
             while (Peek().Type == TokenType.NEWLINE)
                 Next();
         }
 
+        /// <summary>Begins parsing and returns the root program node.</summary>
         public ProgramNode ParseProgram()
         {
             var program = new ProgramNode();
@@ -55,6 +69,7 @@ namespace VM.Parser
             return program;
         }
 
+        /// <summary>Parses a statement node.</summary>
         private StatementNode ParseStatement()
         {
             var token = Peek();
@@ -86,7 +101,9 @@ namespace VM.Parser
                         $"Unknown statement beginning: {token.Type}");
             }
         }
-
+        /// <summary>
+        /// Parses a PRINT statement, optionally followed by comma-separated expressions.
+        /// </summary>
         private StatementNode ParsePrint()
         {
             var printToken = Next();
@@ -103,7 +120,9 @@ namespace VM.Parser
 
             return stmt;
         }
-
+        /// <summary>
+        /// Parses a LET statement, which may assign a value to a variable or an array index.
+        /// </summary>
         private StatementNode ParseLet()
         {
             var letToken = Next();
@@ -139,7 +158,9 @@ namespace VM.Parser
                 Line = letToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses an IF statement including optional ELSE block and mandatory END IF.
+        /// </summary>
         private StatementNode ParseIf()
         {
             var ifToken = Next();
@@ -183,7 +204,9 @@ namespace VM.Parser
                 Line = ifToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses a WHILE loop, which executes until the condition becomes false.
+        /// </summary>
         private StatementNode ParseWhile()
         {
             var whileToken = Next();
@@ -208,7 +231,9 @@ namespace VM.Parser
                 Line = whileToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses a REPEAT loop that continues until the UNTIL condition evaluates to true.
+        /// </summary>
         private StatementNode ParseInput()
         {
             var inputToken = Next();
@@ -232,7 +257,9 @@ namespace VM.Parser
 
             return stmt;
         }
-
+        /// <summary>
+        /// Parses a REPEAT loop that continues until the UNTIL condition evaluates to true.
+        /// </summary>
         private StatementNode ParseRepeat()
         {
             var repeatToken = Next();
@@ -257,7 +284,9 @@ namespace VM.Parser
                 Line = repeatToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses a FOR loop with optional STEP, including initialization, condition, and body.
+        /// </summary>
         private StatementNode ParseFor()
         {
             var forToken = Next();
@@ -296,9 +325,14 @@ namespace VM.Parser
                 Line = forToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses any valid expression starting from the lowest precedence.
+        /// </summary>
         private ExprNode ParseExpr() => ParseBinaryExpr(0);
-
+        /// <summary>
+        /// Parses binary expressions using precedence climbing algorithm.
+        /// Supports chaining binary operators according to precedence.
+        /// </summary>
         private ExprNode ParseBinaryExpr(int minPrecedence)
         {
             var left = ParseUnaryExpr();
@@ -325,7 +359,9 @@ namespace VM.Parser
 
             return left;
         }
-
+        /// <summary>
+        /// Parses unary expressions like negation or logical NOT.
+        /// </summary>
         private ExprNode ParseUnaryExpr()
         {
             if (!Match(TokenType.SUB, TokenType.NOT)) return ParsePrimaryExpr();
@@ -337,7 +373,9 @@ namespace VM.Parser
                 Line = opToken.Line
             };
         }
-
+        /// <summary>
+        /// Parses primary expressions: literals, variables, function calls, and array creation/indexing.
+        /// </summary>
         private ExprNode ParsePrimaryExpr()
         {
             if (Match(TokenType.LPAREN))
@@ -390,7 +428,9 @@ namespace VM.Parser
                         $"Unexpected token in expression: {token.Type}");
             }
         }
-
+        /// <summary>
+        /// Parses a built-in function call with one or more arguments.
+        /// </summary>
         private ExprNode ParseFuncCall()
         {
             var funcToken = Next();
@@ -415,7 +455,10 @@ namespace VM.Parser
                 Line = funcToken.Line
             };
         }
-
+        /// <summary>
+        /// Returns precedence value for a binary operator token.
+        /// Higher values mean higher precedence.
+        /// </summary>
         private static int GetPrecedence(TokenType type) => type switch
         {
             TokenType.OR => 1,
@@ -426,7 +469,9 @@ namespace VM.Parser
             TokenType.EXP => 6,
             _ => 0
         };
-
+        /// <summary>
+        /// Determines whether a token type represents a binary operator.
+        /// </summary>
         private static bool IsBinaryOperator(TokenType type) => type switch
         {
             TokenType.ADD or TokenType.SUB or TokenType.MUL or TokenType.DIV or

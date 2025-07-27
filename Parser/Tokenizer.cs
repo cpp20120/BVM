@@ -1,5 +1,9 @@
 namespace VM.Parser
 {
+    /// <summary>
+    /// Enumeration of all possible token types recognized by the tokenizer.
+    /// Includes keywords, symbols, identifiers, literals, and special markers.
+    /// </summary>
     public enum TokenType
     {
         PRINT,
@@ -51,11 +55,18 @@ namespace VM.Parser
         RBRACKET,
         ARRAY
     }
-
+    /// <summary>
+    /// Represents a single token from the source code, with type, raw text, and line number.
+    /// </summary>
     public record Token(TokenType Type, string Text, int Line);
-
+    /// <summary>
+    /// Provides utility methods for working with tokens.
+    /// </summary>
     public static class TokenUtils
     {
+        /// <summary>
+        /// Converts a token type to a human-readable string (for operators).
+        /// </summary>
         public static string TokenToString(TokenType type) => type switch
         {
             TokenType.ADD => "+",
@@ -75,7 +86,10 @@ namespace VM.Parser
             _ => type.ToString()
         };
     }
-
+    /// <summary>
+    /// Converts raw source code into a stream of tokens.
+    /// Line-based, BASIC-style tokenizer.
+    /// </summary>
     public class Tokenizer(string sourceCode)
     {
         private readonly string[] _lines = sourceCode.Replace("\r\n", "\n").Split('\n');
@@ -131,7 +145,9 @@ namespace VM.Parser
             ["["] = TokenType.LBRACKET,
             ["]"] = TokenType.RBRACKET,
         };
-
+        /// <summary>
+        /// Tokenizes the source code line by line, returning a stream of tokens.
+        /// </summary>
         public IEnumerable<Token> Tokenize()
         {
             while (_lineIndex < _lines.Length)
