@@ -1,0 +1,41 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [ "**/*.csproj" ],
+          "exclude": [ "**/bin/**", "**/obj/**" ]
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net9.0"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [ "**/*.yml", "**/*.md" ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "**/images/**" ]
+      }
+    ],
+    "overwrite": [
+      {
+        "files": [ "articles/*.md" ]
+      }
+    ],
+    "dest": "_site",
+    "globalMetadata": {
+      "_appTitle": "My Project Docs",
+      "_disableContribution": true
+    },
+    "template": [
+      "default"
+    ]
+  }
+}
