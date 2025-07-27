@@ -3,7 +3,7 @@
     {
       "src": [
         {
-          "files": [ "**/*.csproj" ],
+          "files": [ "../BVM.csproj" ],
           "exclude": [ "**/bin/**", "**/obj/**" ]
         }
       ],
