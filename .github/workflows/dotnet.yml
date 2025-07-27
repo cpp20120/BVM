@@ -72,12 +72,12 @@ jobs:
         run: dotnet tool update -g docfx
 
       - name: Build documentation
-        run: docfx docs/docfx.json
+        run: docfx Docs/docfx.json
 
       - name: Upload documentation artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_site
+          path: Docs/_site
 
       - name: Deploy to GitHub Pages
         id: deployment
