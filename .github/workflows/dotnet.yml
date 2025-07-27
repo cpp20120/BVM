@@ -1,10 +1,19 @@
-﻿name: .NET CI
+name: .NET CI
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  actions: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 env:
   DOTNET_VERSION: '9.0.x'
@@ -42,3 +51,34 @@ jobs:
         with:
           name: packages
           path: ./artifacts/*.nupkg
+
+  publish-docs:
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install docfx
+        run: dotnet tool update -g docfx
+
+      - name: Build documentation
+        run: docfx docs/docfx.json
+
+      - name: Upload documentation artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
