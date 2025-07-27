@@ -1,5 +1,5 @@
 # Добро пожаловать в документацию BVM
 
-- [API Reference](api/index.html)
+- [API Reference](api/toc.html)
 
 Это автогенерированная документация для BVM.
