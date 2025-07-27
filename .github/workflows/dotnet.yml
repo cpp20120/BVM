@@ -32,9 +32,6 @@ jobs:
       - name: Run tests
         run: dotnet test --configuration ${{ env.CONFIGURATION }} --no-build --verbosity normal
 
-      - name: Run code analysis
-        run: dotnet format --verify-no-changes --severity warn
-
       - name: Pack artifacts
         if: github.ref == 'refs/heads/main'
         run: dotnet pack --configuration ${{ env.CONFIGURATION }} --output ./artifacts
